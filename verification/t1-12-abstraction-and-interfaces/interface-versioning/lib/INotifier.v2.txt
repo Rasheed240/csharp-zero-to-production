@@ -1,0 +1,8 @@
+namespace Lib;
+
+// VERSION 2 — a second member added, with NO default implementation.
+public interface INotifier
+{
+    string Send(string message);
+    string SendUrgent(string message);
+}

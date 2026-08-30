@@ -1,0 +1,24 @@
+using System;
+using Lib;
+
+class Unrelated                       // same assembly as Program, not derived
+{
+    public void Try(Widget w)
+    {
+        Console.WriteLine(w.Public);              // 1
+        Console.WriteLine(w.Internal);            // 2
+        Console.WriteLine(w.Protected);           // 3
+        Console.WriteLine(w.ProtectedInternal);   // 4
+    }
+}
+
+class ForeignDerived : Widget         // derived, different assembly from Lib
+{
+    public void Try()
+    {
+        Console.WriteLine(Protected);             // 5
+        Console.WriteLine(PrivateProtected);      // 6
+    }
+}
+
+class Program { static void Main() { } }

@@ -1,0 +1,64 @@
+// 01-compile-errors.cs.txt — the errors a source generator produces when the
+// consumer's half of the deal is wrong. Stored as .txt because it is MEANT not
+// to build. To reproduce, apply each edit to
+// generator-demo/Ledger.App/Program.cs and run
+//   dotnet build Ledger.App/Ledger.App.csproj -c Release
+// Observed on .NET 10.0.400:
+//
+// (a) Remove `partial` from a class marked [AuditLog]:
+//
+//     Ledger.App\Program.cs(12,14): error CS0260: Missing partial modifier on
+//     declaration of type 'Invoice'; another partial declaration of this type exists
+//
+//     The generator emitted `partial class Invoice`; the hand-written half no
+//     longer agrees. This is the most common first mistake and the message names
+//     the fix exactly.
+//
+// (b) Declare the generated member by hand as well:
+//
+//     Ledger.App\generated\...\Payment.Audit.g.cs(9,23): error CS0111: Type
+//     'Payment' already defines a member called 'ToAuditLog' with the same
+//     parameter types
+//
+//     Note WHERE the error is reported: in the GENERATED file, not in yours.
+//     The generator cannot see that you wrote one. A production generator checks
+//     for an existing member in its transform and either skips or reports its own
+//     diagnostic — which is why real generators ship analyser rules.
+//
+// (c) EmitCompilerGeneratedFiles without excluding the output folder:
+//
+//     error CS0101: The namespace 'Ledger.App' already contains a definition for
+//     'AuditLogAttribute'
+//     error CS0579: Duplicate 'global::System.AttributeUsage' attribute
+//     error CS0111: Type 'Payment' already defines a member called 'ToAuditLog'
+//
+//     This one is a build-configuration bug rather than a generator bug, and it
+//     was hit while writing this fixture. Writing generated files INTO the
+//     project directory means the SDK's default globbing compiles them a second
+//     time, alongside the copies the generator produces in memory. The fix is one
+//     line in the .csproj:
+//
+//       <Compile Remove="generated/**/*.cs" />
+//
+//     Putting the output outside the project directory works too, and is what
+//     most templates do.
+
+// ---------------------------------------------------------------------------
+// (a) — the non-partial case.
+
+[AuditLog]
+public class Invoice          // was: public partial class Invoice
+{
+    public string Number { get; set; } = "INV-1";
+}
+
+// ---------------------------------------------------------------------------
+// (b) — the hand-written member the generator does not know about.
+
+[AuditLog]
+public partial class Payment
+{
+    public string Reference { get; set; } = "P-1";
+    public long AmountMinor { get; set; } = 5_000;
+    public string ToAuditLog() => "hand-written";
+}

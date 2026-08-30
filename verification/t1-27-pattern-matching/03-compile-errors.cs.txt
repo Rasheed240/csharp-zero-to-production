@@ -1,0 +1,72 @@
+// 03-compile-errors.cs.txt — what the compiler refuses, and what it only warns
+// about. Stored as .txt because it is MEANT not to build. Rename to .cs and run
+// `dotnet run 03-compile-errors.cs` to reproduce. Observed on .NET 10.0.400:
+//
+//   (36,9):  error CS8510: The pattern is unreachable. It has already been handled
+//            by a previous arm of the switch expression or it is impossible to match.
+//   (37,9):  error CS8510: (same, third arm)
+//   (42,59): warning CS8524: The switch expression does not handle some values of its
+//            input type (it is not exhaustive) involving an unnamed enum value.
+//            For example, the pattern '(PaymentState)4' is not covered.
+//   (52,48): warning CS8509: The switch expression does not handle all possible values
+//            of its input type (it is not exhaustive). For example, the pattern '_' is
+//            not covered.
+//   (60,64): error CS8985: List patterns may not be used for a value of type
+//            'IEnumerable<int>'. No suitable 'Length' or 'Count' property was found.
+//   (60,64): error CS0021: Cannot apply indexing with [] to an expression of type
+//            'IEnumerable<int>'
+//   (66,9):  error CS8510: (a base-type arm before a derived-type arm)
+//
+// The distinction matters: SUBSUMPTION is an error, NON-EXHAUSTIVENESS is a warning.
+
+using System;
+using System.Collections.Generic;
+
+enum PaymentState { Pending, Settled, Failed, Refunded }
+
+abstract record Event;
+record Created(string Ref) : Event;
+record Failed(string Ref, string Reason) : Event;
+
+class Probe
+{
+    // CS8510 x2: a wider relational pattern first makes the narrower ones unreachable.
+    static string FeeWrongOrder(decimal amount) => amount switch
+    {
+        < 10000m => "0.6%",
+        < 1000m => "1.0%",
+        < 100m => "1.5%",
+        _ => "flat 0.20"
+    };
+
+    // CS8524: every NAMED enum value is covered, but an enum is an int.
+    static string EnumWithoutDiscard(PaymentState s) => s switch
+    {
+        PaymentState.Pending => "waiting",
+        PaymentState.Settled => "done",
+        PaymentState.Failed => "failed",
+        PaymentState.Refunded => "reversed"
+    };
+
+    // CS8509: every subtype in this file is covered, and C# still does not consider
+    // it exhaustive — an abstract record is not a closed hierarchy.
+    static string SummariseEvent(Event e) => e switch
+    {
+        Created c => $"{c.Ref} created",
+        Failed f => $"{f.Ref} failed"
+    };
+
+    // CS8985 + CS0021: a list pattern needs Length/Count and an indexer. A pattern
+    // will not enumerate a sequence behind your back, so it refuses to compile.
+    static bool ListOnEnumerable(IEnumerable<int> xs) => xs is [_, _, _];
+
+    // CS8510: a base-type arm before a derived-type arm subsumes it.
+    static string Subsumed(Event e) => e switch
+    {
+        Event => "any event",
+        Created => "created",
+        _ => "other"
+    };
+
+    static void Main() { }
+}

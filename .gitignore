@@ -1,0 +1,46 @@
+# ---------------------------------------------------------------------------
+# Personal files and working notes — never publish
+# ---------------------------------------------------------------------------
+*.pdf
+PROGRESS-LEDGER.md
+
+# ---------------------------------------------------------------------------
+# .NET build output from the verification fixtures.
+# The SOURCE under verification/ is tracked; the build products are not.
+# Everything regenerates with `dotnet run` or `dotnet build`.
+# ---------------------------------------------------------------------------
+bin/
+obj/
+generated/
+*.user
+*.suo
+[Dd]ebug/
+[Rr]elease/
+
+# The .NET file-based-app build cache, if it ever lands inside the tree.
+.dotnet/
+
+# ---------------------------------------------------------------------------
+# Editors and IDEs
+# ---------------------------------------------------------------------------
+.vs/
+.vscode/
+.idea/
+*.swp
+*~
+
+# ---------------------------------------------------------------------------
+# Operating system
+# ---------------------------------------------------------------------------
+Thumbs.db
+ehthumbs.db
+desktop.ini
+.DS_Store
+
+# ---------------------------------------------------------------------------
+# Scratch
+# ---------------------------------------------------------------------------
+scratch/
+tmp/
+*.tmp
+*.log

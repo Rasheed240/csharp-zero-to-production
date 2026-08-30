@@ -1,0 +1,70 @@
+// 04-compile-errors.cs.txt — the four ways an extension method fails to compile.
+// Stored as .txt because it is MEANT not to build. Rename to .cs and run
+// `dotnet run 04-compile-errors.cs` to reproduce. Observed on .NET 10.0.400:
+//
+// On a first build, only these two are reported — the declaration errors stop
+// the later phases:
+//
+//   (42,7):  error CS1106: Extension method must be defined in a non-generic static class
+//   (52,30): error CS1109: Extension methods must be defined in a top level static class;
+//            Nested is a nested class
+//
+// Delete the NotStatic and Outer classes and rebuild, and the call-site errors
+// appear:
+//
+//   (46,29): error CS0121: The call is ambiguous between the following methods or
+//            properties: 'Alpha.A.Describe(Domain.Widget)' and 'Beta.B.Describe(Domain.Widget)'
+//   (47,29): error CS1061: 'Widget' does not contain a definition for 'Missing' and no
+//            accessible extension method 'Missing' accepting a first argument of type
+//            'Widget' could be found (are you missing a using directive or an assembly
+//            reference?)
+//
+// Note the CS1061 wording: the compiler explicitly tells you a MISSING USING
+// DIRECTIVE is a candidate explanation. That message exists because this is the
+// most common confusion the feature produces.
+//
+
+
+using System;
+using System.Collections.Generic;
+using Alpha;
+using Beta;
+
+namespace Domain { public class Widget { public string Name { get; init; } = ""; } }
+
+namespace Alpha
+{
+    using Domain;
+    public static class A { public static string Describe(this Widget w) => "A"; }
+}
+
+namespace Beta
+{
+    using Domain;
+    public static class B { public static string Describe(this Widget w) => "B"; }
+}
+
+// CS1106: the containing class is not static.
+class NotStatic
+{
+    public static string Bad(this string s) => s;
+}
+
+// CS1109: even a static class does not qualify if it is nested.
+public static class Outer
+{
+    public static class Nested
+    {
+        public static string AlsoBad(this string s) => s;
+    }
+}
+
+class Probe
+{
+    static void Main()
+    {
+        var w = new Domain.Widget();
+        Console.WriteLine(w.Describe());   // CS0121: Alpha and Beta both define it
+        Console.WriteLine(w.Missing());    // CS1061: no such method, and no using has one
+    }
+}

@@ -1,0 +1,13 @@
+# Normalise line endings in the repository to LF, whatever the checkout OS uses.
+# Without this, a Windows checkout commits CRLF and every file looks changed on
+# a Linux machine (and in every diff on GitHub).
+* text=auto eol=lf
+
+# Shell scripts must be LF or they will not run.
+*.sh text eol=lf
+
+# Never touch binaries.
+*.pdf binary
+*.png binary
+*.jpg binary
+*.ico binary

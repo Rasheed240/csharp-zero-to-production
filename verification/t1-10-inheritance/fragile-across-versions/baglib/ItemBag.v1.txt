@@ -1,0 +1,19 @@
+using System.Collections.Generic;
+
+namespace BagLib;
+
+// VERSION 1. AddRange is implemented in terms of Add. This is an internal
+// detail; nothing in the public surface reveals it.
+public class ItemBag
+{
+    private readonly List<string> _items = new();
+
+    public int Count => _items.Count;
+
+    public virtual void Add(string item) => _items.Add(item);
+
+    public virtual void AddRange(IEnumerable<string> items)
+    {
+        foreach (var item in items) Add(item);
+    }
+}

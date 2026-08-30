@@ -1,0 +1,44 @@
+// 06-compile-errors.cs.txt — three things an iterator method cannot do.
+// Stored as .txt because it is MEANT not to compile. Rename to .cs and run
+// `dotnet run 06-compile-errors.cs` to reproduce. Observed on .NET 10.0.400:
+//
+//   (19,13): error CS1626: Cannot yield a value in the body of a try block with a catch clause
+//   (33,13): error CS1631: Cannot yield a value in the body of a catch clause
+//   (38,46): error CS1623: Iterators cannot have ref, in or out parameters
+
+using System;
+using System.Collections.Generic;
+
+class Probe
+{
+    // CS1626: cannot yield inside a try that has a catch clause.
+    static IEnumerable<int> WithCatch()
+    {
+        try
+        {
+            yield return 1;
+        }
+        catch (Exception)
+        {
+            yield break;
+        }
+    }
+
+    // CS1631: cannot yield inside a catch block.
+    static IEnumerable<int> InCatch()
+    {
+        try { }
+        catch (Exception)
+        {
+            yield return 1;
+        }
+    }
+
+    // CS1623: iterators cannot have ref, in, or out parameters.
+    static IEnumerable<int> RefParam(ref int n)
+    {
+        yield return n;
+    }
+
+    static void Main() { }
+}

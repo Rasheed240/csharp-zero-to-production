@@ -1,0 +1,60 @@
+// 04-compile-errors.cs.txt — NOT meant to compile. Records the exact diagnostic
+// for each mistake. Excluded from the build sweep.
+// To reproduce: cp 04-compile-errors.cs.txt probe.cs && dotnet build probe.cs
+// Verified on .NET 10.0.400. Blocks were also each verified in isolation,
+// because an earlier hard error can suppress later analysis.
+
+using System;
+
+// ---- 1. calling a default interface method through the class --------------
+interface IAuditable { string Id { get; } string AuditLine() => $"audit:{Id}"; }
+sealed class Payment : IAuditable { public string Id => "P"; }
+
+static class T1
+{
+    public static string Try() => new Payment().AuditLine();
+    // CS1061: 'Payment' does not contain a definition for 'AuditLine' and no
+    //         accessible extension method 'AuditLine' accepting a first argument
+    //         of type 'Payment' could be found
+}
+
+// ---- 2. the unresolved diamond --------------------------------------------
+// NOTE: two interfaces that merely SHARE A NAME are not a diamond — they are
+// different members, and a class may implement both with no error. A real
+// diamond needs one base member with two competing implementations.
+interface IBase { string Describe(); }
+interface IUpper : IBase { string IBase.Describe() => "UPPER"; }
+interface ILower : IBase { string IBase.Describe() => "lower"; }
+
+sealed class Ambiguous : IUpper, ILower { }
+// CS8705: Interface member 'IBase.Describe()' does not have a most specific
+//         implementation. Neither 'IUpper.IBase.Describe()', nor
+//         'ILower.IBase.Describe()' are most specific.
+
+// ---- 3. instantiating an abstract class -----------------------------------
+abstract class Exporter { public abstract string Ext { get; } }
+
+static class T3
+{
+    public static Exporter Try() => new Exporter();
+    // CS0144: Cannot create an instance of the abstract type or interface 'Exporter'
+}
+
+// ---- 4. a concrete class leaving an abstract member unimplemented ----------
+sealed class HalfDone : Exporter { }
+// CS0534: 'HalfDone' does not implement inherited abstract member
+//         'Exporter.Ext.get'
+
+// ---- 5. a class not implementing an interface member ----------------------
+interface INotifier { string Send(string m); string SendUrgent(string m); }
+sealed class EmailNotifier : INotifier { public string Send(string m) => m; }
+// CS0535: 'EmailNotifier' does not implement interface member
+//         'INotifier.SendUrgent(string)'
+
+// ---- 6. an explicit implementation given an access modifier ---------------
+interface ILifecycle { void Start(); }
+sealed class Worker : ILifecycle
+{
+    public void ILifecycle.Start() { }
+    // CS0106: The modifier 'public' is not valid for this item
+}

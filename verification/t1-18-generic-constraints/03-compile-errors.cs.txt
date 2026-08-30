@@ -1,0 +1,64 @@
+// 03-compile-errors.cs.txt — NOT meant to compile. Records the diagnostic for
+// each mistake. Excluded from the build sweep. Each block also verified alone.
+// Verified on .NET 10.0.400.
+
+using System;
+using System.Collections.Generic;
+
+interface IEntity { string Id { get; } }
+sealed class Widget { public Widget(int size) { } }     // no parameterless ctor
+sealed class Customer : IEntity { public string Id => "C-1"; }
+
+static class T1
+{
+    // An unconstrained T supports only what object supports.
+    public static string Try<T>(T value) => value.Id;
+    // CS1061: 'T' does not contain a definition for 'Id'
+}
+
+static class T2
+{
+    public static T Make<T>() => new T();
+    // CS0304: Cannot create an instance of the variable type 'T' because it
+    //         does not have the new() constraint
+}
+
+static class T3
+{
+    public static T Make<T>() where T : new() => new T();
+    public static void Try() => Make<Widget>();
+    // CS0310: 'Widget' must be a non-abstract type with a public parameterless
+    //         constructor in order to use it as parameter 'T'
+}
+
+static class T4
+{
+    public static string Read<T>(T item) where T : IEntity => item.Id;
+    public static void Try() => Read(42);
+    // CS0315: The type 'int' cannot be used as type parameter 'T'. There is no
+    //         boxing conversion from 'int' to 'IEntity'.
+}
+
+static class T5
+{
+    // Constraint order is fixed: class/struct, then base class, then
+    // interfaces, then new().
+    public static T Make<T>() where T : new(), IEntity => new T();
+    // CS0401: The new() constraint must be the last restrictive constraint specified
+}
+
+static class T6
+{
+    public static Dictionary<T, int> Make<T>() => new();
+    // CS8714 — and note it is a WARNING, not an error, and only appears when
+    //         the nullable context is enabled. 'notnull' is enforced at
+    //         warning level because nullable reference types are annotations.
+}
+
+static class T7
+{
+    // struct and class are mutually exclusive.
+    public static void Try<T>() where T : struct, class { }
+    // CS0449: The 'class', 'struct', 'unmanaged', 'notnull', and 'default'
+    //         constraints cannot be combined or duplicated, and must be specified first
+}

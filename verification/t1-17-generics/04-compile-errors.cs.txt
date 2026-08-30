@@ -1,0 +1,71 @@
+// 04-compile-errors.cs.txt — NOT meant to compile. Records the diagnostic for
+// each mistake. Excluded from the build sweep.
+// To reproduce: cp 04-compile-errors.cs.txt probe.cs && dotnet build probe.cs
+// Verified on .NET 10.0.400, each block also checked in isolation.
+
+using System;
+using System.Collections.Generic;
+
+class Animal { }
+class Dog : Animal { }
+
+static class T1
+{
+    public static void Try()
+    {
+        var typed = new List<int>();
+        typed.Add("not a number");
+        // CS1503: Argument 1: cannot convert from 'string' to 'int'
+    }
+}
+
+static class T2
+{
+    public static void Try()
+    {
+        List<Dog> dogs = new();
+        List<Animal> animals = dogs;
+        // CS0029: Cannot implicitly convert type 'System.Collections.Generic.List<Dog>'
+        //         to 'System.Collections.Generic.List<Animal>'
+    }
+}
+
+interface IStore<T> { T Get(); void Put(T item); }
+
+interface IResult<out T> { T Value { get; } }
+readonly record struct Money(decimal Amount);
+
+static class T3
+{
+    public static void Try()
+    {
+        IResult<Money> typed = null!;
+        IResult<object> loose = typed;
+        // CS0266: Cannot implicitly convert type 'IResult<Money>' to
+        //         'IResult<object>'. Variance conversions are reference
+        //         conversions, so a value type argument is always invariant.
+    }
+}
+
+interface IBadVariance<out T> { void Put(T item); }
+// CS1961: Invalid variance: The type parameter 'T' must be contravariantly valid
+//         on 'IBadVariance<T>.Put(T)'. 'T' is covariant.
+
+static class T4
+{
+    // A type parameter cannot be used with an operator without a constraint.
+    public static T Add<T>(T a, T b) => a + b;
+    // CS0019: Operator '+' cannot be applied to operands of type 'T' and 'T'
+}
+
+static class T5
+{
+    // Type inference cannot see through a return type alone.
+    public static T Make<T>() => default!;
+    public static void Try()
+    {
+        var x = Make();
+        // CS0411: The type arguments for method 'T5.Make<T>()' cannot be inferred
+        //         from the usage. Try specifying the type arguments explicitly.
+    }
+}

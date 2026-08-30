@@ -1,0 +1,79 @@
+// 04-warnings.cs.txt — the nullable warnings themselves, each produced by a
+// minimal case. Stored as .txt because the whole point is that it does NOT build
+// clean. Rename to .cs and run `dotnet run 04-warnings.cs` to reproduce.
+// Observed on .NET 10.0.400 (see the bottom of this file for the exact output):
+//
+//   (41,27): warning CS8602: Dereference of a possibly null reference.
+//   (45,30): warning CS8600: Converting null literal or possible null value to
+//            non-nullable type.
+//   (48,38): warning CS8603: Possible null reference return.
+//   (52,16): warning CS8604: Possible null reference argument for parameter 'value'
+//            in 'int Program.Length(string value)'.
+//   (62,55): warning CS8602: Dereference of a possibly null reference.
+//   (66,23): warning CS8625: Cannot convert null literal to non-nullable reference type.
+//   (78,19): warning CS8618: Non-nullable property 'Name' must contain a non-null value
+//            when exiting constructor. Consider adding the 'required' modifier or
+//            declaring the property as nullable.
+//   (48,23): warning CS8321: The local function 'BadReturn' is declared but never used
+//
+// And one line that produces NO warning although it should: line 58, which
+// dereferences a property after checking the SAME property for null. The
+// compiler narrows across two getter calls. 01-flow-analysis.cs shows the
+// second call returning null on that exact shape.
+//
+// Note what is NOT here: no errors. Every one of these is a warning, and a
+// project that does not treat them as errors ships all of them.
+
+#:property Nullable=enable
+
+using System;
+using System.Collections.Generic;
+
+class Program
+{
+    static string? Maybe() => null;
+    static int Length(string value) => value.Length;
+
+    static void Main()
+    {
+        // CS8602: dereferencing a maybe-null value.
+        var a = Maybe();
+        Console.WriteLine(a.Length);
+
+        // CS8600: assigning a maybe-null value to a non-nullable local.
+        var b = Maybe();
+        string nonNullable = b;
+
+        // CS8603: returning a maybe-null value from a non-nullable signature.
+        static string BadReturn() => Maybe();
+
+        // CS8604: passing a maybe-null value to a non-nullable parameter.
+        var c = Maybe();
+        Length(c);
+
+        // NO WARNING — and that is the point. The compiler narrows a property
+        // across two reads even though each read is a separate getter call.
+        // See 01-flow-analysis.cs, where the second read returns null.
+        var probe = new Probe();
+        if (probe.Value is not null) Console.WriteLine(probe.Value.Length);
+
+        // CS8602: the element type is string?, and foreach does not narrow it.
+        var items = new List<string?> { "x", null };
+        foreach (var item in items) Console.WriteLine(item.Length);
+
+        // CS8625: assigning null to a non-nullable field.
+        var holder = new Holder();
+        holder.Name = null;
+    }
+}
+
+class Probe
+{
+    private int _reads;
+    public string? Value { get { _reads++; return _reads % 2 == 1 ? "x" : null; } }
+}
+
+class Holder
+{
+    public string Name { get; set; }   // CS8618: never assigned a non-null value
+}

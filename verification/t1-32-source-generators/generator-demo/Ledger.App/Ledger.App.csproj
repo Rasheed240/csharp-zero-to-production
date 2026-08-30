@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>Ledger.App</RootNamespace>
+    <!-- Write the generated files to disk so they can be read and shown. -->
+    <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
+    <CompilerGeneratedFilesOutputPath>generated</CompilerGeneratedFilesOutputPath>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- EmitCompilerGeneratedFiles writes the generated source INTO the project
+         folder, where the SDK's default globbing would then compile it a second
+         time (CS0101, CS0111, CS0579). Excluding it is mandatory whenever the
+         output path is inside the project. -->
+    <Compile Remove="generated/**/*.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- OutputItemType=Analyzer is what makes this a generator rather than a
+         normal reference. ReferenceOutputAssembly=false means the app does not
+         link against the generator's own assembly. -->
+    <ProjectReference Include="..\Ledger.Generators\Ledger.Generators.csproj"
+                      OutputItemType="Analyzer"
+                      ReferenceOutputAssembly="false" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,72 @@
+// 05-compile-errors.cs.txt — NOT meant to compile. Each block records the
+// exact diagnostic the compiler produces. Excluded from the build sweep.
+// To reproduce: cp 05-compile-errors.cs.txt probe.cs && dotnet build probe.cs
+// Verified on .NET 10.0.400.
+// Note: run this and only some diagnostics appear — a hard error such as CS1721
+// stops later analysis. Each block was also verified in isolation.
+
+using System;
+
+// ---- 1. the base has no parameterless constructor -------------------------
+class NeedsId
+{
+    public NeedsId(string id) { }
+}
+
+class Forgot : NeedsId
+{
+    public Forgot() { }
+    // CS7036: There is no argument given that corresponds to the required
+    //         parameter 'id' of 'NeedsId.NeedsId(string)'
+}
+
+// ---- 2. inheriting from a sealed type -------------------------------------
+sealed class Final { }
+
+class TriesToExtend : Final { }
+// CS0509: 'TriesToExtend': cannot derive from sealed type 'Final'
+
+// ---- 3. reaching a private base member ------------------------------------
+class HasSecret
+{
+    private int _secret = 1;
+    protected int Shared = 2;
+}
+
+class Reader : HasSecret
+{
+    public int Try() => _secret;
+    // CS0122: 'HasSecret._secret' is inaccessible due to its protection level
+}
+
+// ---- 4. accidental hiding, no 'new' keyword -------------------------------
+class GrewAMember
+{
+    public string Describe() => "base";
+}
+
+class AlreadyHadOne : GrewAMember
+{
+    public string Describe() => "derived";
+    // CS0108 (warning): 'AlreadyHadOne.Describe()' hides inherited member
+    //         'GrewAMember.Describe()'. Use the new keyword if hiding was intended.
+}
+
+// ---- 5. override with no virtual to override ------------------------------
+class NotVirtual
+{
+    public string Name() => "x";
+}
+
+class TriesToOverride : NotVirtual
+{
+    public override string Name() => "y";
+    // CS0506: 'TriesToOverride.Name()': cannot override inherited member
+    //         'NotVirtual.Name()' because it is not marked virtual, abstract, or override
+}
+
+// ---- 6. more than one base class ------------------------------------------
+class A { }
+class B { }
+class BothPlease : A, B { }
+// CS1721: Class 'BothPlease' cannot have multiple base classes: 'A' and 'B'

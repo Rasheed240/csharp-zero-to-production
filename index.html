@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<meta name="description" content="Zero to production-grade backend engineering in C# and .NET. An offline, single-folder curriculum.">
+<title>Zero to Production · C# / .NET</title>
+
+<!--
+  Everything below is loaded with relative paths and classic <script> tags.
+  There is no fetch(), no XMLHttpRequest, no ES module, and no service worker
+  anywhere in this project, because all four are blocked or crippled under the
+  file:// origin. See CONTENT-LOADING.md.
+
+  Applying the stored theme before first paint avoids a flash of the wrong
+  theme. This is the only inline script in the project.
+-->
+<script>
+  (function () {
+    try {
+      var pref = localStorage.getItem("csprep.v1.theme");
+      var theme = (pref === "light" || pref === "dark")
+        ? pref
+        : (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+      document.documentElement.setAttribute("data-theme", theme);
+    } catch (e) {
+      document.documentElement.setAttribute("data-theme", "light");
+    }
+  })();
+</script>
+
+<link rel="stylesheet" href="assets/css/site.css">
+</head>
+
+<body>
+
+<a class="skip-link" href="#main">Skip to content</a>
+
+<header class="topbar">
+  <button class="icon-btn" id="navToggle" type="button" aria-label="Toggle navigation" aria-controls="sidebar" aria-expanded="false"></button>
+
+  <a class="topbar__brand" href="#/">
+    <span class="mark" aria-hidden="true">C#</span>
+    <span class="label" id="brandTitle">Zero to Production</span>
+    <span class="sub" id="brandSub"></span>
+  </a>
+
+  <div class="topbar__spacer"></div>
+
+  <div class="search" id="search" role="search">
+    <div class="search__field">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7" fill="none"/><path d="M20 20l-3.5-3.5" fill="none"/></svg>
+      <input class="search__input" id="searchInput" type="search" placeholder="Search the curriculum" autocomplete="off" spellcheck="false" aria-label="Search the curriculum" aria-controls="searchPanel" aria-expanded="false">
+      <kbd class="search__kbd">/</kbd>
+    </div>
+    <div class="search__panel" id="searchPanel" hidden>
+      <div class="search__meta" id="searchMeta">
+        <span id="searchCount" aria-live="polite"></span>
+        <span data-index-status></span>
+      </div>
+      <div id="searchResults"></div>
+    </div>
+  </div>
+
+  <div class="progress-pill" id="progressPill">
+    <span id="progressText">0 / 0</span>
+    <span class="progress-pill__bar"><span class="progress-pill__fill" id="progressFill"></span></span>
+  </div>
+
+  <button class="icon-btn" id="themeBtn" type="button" aria-label="Switch theme"></button>
+</header>
+
+<div class="read-progress" id="readProgress" aria-hidden="true"></div>
+
+<div class="shell">
+
+  <nav class="sidebar" id="sidebar" aria-label="Curriculum" tabindex="-1">
+    <div class="sidebar__title">Tracks</div>
+    <div id="navTracks"></div>
+  </nav>
+
+  <main class="main" id="main">
+    <div id="article"></div>
+  </main>
+
+  <aside class="toc" id="toc" aria-label="On this page" hidden>
+    <div class="toc__title">On this page</div>
+    <ul class="toc__list" id="tocList"></ul>
+  </aside>
+
+</div>
+
+<div class="scrim" id="scrim"></div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<input type="file" id="fileInput" accept="application/json,.json" class="visually-hidden" tabindex="-1" aria-hidden="true">
+
+<!-- Machinery. Order matters: highlight and store define namespaces app.js uses. -->
+<script src="assets/js/highlight.js"></script>
+<script src="assets/js/store.js"></script>
+<script src="assets/js/search.js"></script>
+
+<!-- Content registry. This is the only file that changes when a module is added. -->
+<script src="content/manifest.js"></script>
+
+<!-- Boots the site. Must come after the manifest. -->
+<script src="assets/js/app.js"></script>
+
+</body>
+</html>

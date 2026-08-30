@@ -1,0 +1,10 @@
+namespace Lib;
+
+// VERSION 2 — every value changed. Nothing else about the surface changed.
+public static class Config
+{
+    public const int MaxRetries = 5;
+    public const decimal Vat = 0.25m;
+    public static readonly int MaxRetriesField = 5;
+    public static readonly decimal VatField = 0.25m;
+}

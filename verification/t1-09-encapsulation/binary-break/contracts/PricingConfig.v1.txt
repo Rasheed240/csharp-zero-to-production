@@ -1,0 +1,9 @@
+namespace Contracts;
+
+// VERSION 1 — Markup is a public FIELD.
+public class PricingConfig
+{
+    public decimal Markup;
+
+    public PricingConfig(decimal markup) => Markup = markup;
+}

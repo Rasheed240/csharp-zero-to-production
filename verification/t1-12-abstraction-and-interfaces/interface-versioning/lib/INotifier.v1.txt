@@ -1,0 +1,7 @@
+namespace Lib;
+
+// VERSION 1 — one member.
+public interface INotifier
+{
+    string Send(string message);
+}

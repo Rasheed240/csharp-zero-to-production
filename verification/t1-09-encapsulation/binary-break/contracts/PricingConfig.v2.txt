@@ -1,0 +1,10 @@
+namespace Contracts;
+
+// VERSION 2 — identical source-level usage, but Markup is now a PROPERTY.
+// Source-compatible. Binary-INcompatible.
+public class PricingConfig
+{
+    public decimal Markup { get; set; }
+
+    public PricingConfig(decimal markup) => Markup = markup;
+}
