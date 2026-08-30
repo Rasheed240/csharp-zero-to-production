@@ -719,6 +719,23 @@ with `OutputItemType="Analyzer"`, and that two-project shape is the lesson. Run 
 package cache here; on a clean machine this is the one fixture in the repository that needs network
 access once. Everything else, including the site itself, is offline.
 
+### `t2-01-threads-and-scheduling/`
+
+| File | What it proves | Run in |
+| --- | --- | --- |
+| `01-what-a-thread-is.cs` | The process already holds 8 OS threads before you create one. Locals are private, the heap is shared. `new Thread(...)` is **foreground** by default — the reason services hang on shutdown. The stack-depth probe shows the stacks differ but deliberately does NOT claim to measure their size: `EnsureSufficientExecutionStack` reserves a fixed headroom, so the 11.1x ratio is not the 4x the sizes would suggest. | Debug |
+| `02-cost-of-threads.cs` | Creating a thread **552 us** against **15 us** to dispatch to a pooled one — **37x**, the justification for t2-02. An idle thread costs **24 KB of working set**, not the 1 MB reserved. Oversubscription with work held fixed: 176 ms on 4 threads, 115 ms on 64, **243 ms on 4,096**. | **Release** |
+| `03-concurrency-vs-parallelism.cs` | The track's central distinction, same thread counts both times: CPU-bound saturates below 3x; I/O-bound reaches **33.81x on 32 threads**. 64 blocked threads cost **0.98x**. And the same I/O work async: same elapsed time on **12 OS threads against 40**. | **Release** |
+| `04-production.cs` | Ledger settlement, three designs, growing batch. At 512: thread-per-item 699 ms / 389 threads, bounded pool 1,591 ms / 51 threads, async **630 ms / 19 threads**. Thread-per-item is the FASTEST at batch 8, which is the trap. | **Release** |
+| `05-exercises.cs` | Every answer claimed, including the worker-sizing table for a 90%-waiting workload. Exercise 1 divides a fixed total across threads — an earlier version gave each thread the full workload and produced a table that appeared to show threads hurting CPU-bound work. | **Release** |
+| `06-yielding.cs` | **`Thread.Sleep(1)` takes 15.5 ms**, not 1 — the Windows timer resolution; `Task.Delay(1)` matches. 8 spinning threads cost **3.05x** where 8 blocked cost **1.07x** and `SpinWait` costs **0.91x**. Thread priority measured as a non-guarantee: Lowest **567M** iterations, Highest **532M**. | **Release** |
+
+**A measurement this folder deliberately does not make:** context-switch counts. Windows exposes
+them through ETW or a performance counter needing elevation, and neither belongs in a file run with
+`dotnet run`. An earlier draft had a `ContextSwitches()` helper that returned the thread count under
+that label; it was deleted rather than shipped. The oversubscription cost is shown through timings,
+and the OS-thread column is labelled as what it is.
+
 ## Measured on
 
 | | |

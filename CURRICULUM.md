@@ -37,12 +37,12 @@ No site machinery (`assets/js/*`, `assets/css/*`, `index.html`) is touched. See 
 | Track | Modules | Written / Frozen |
 | --- | ---: | ---: |
 | 1 — Language Foundations | 32 | 32 |
-| 2 — Async, Memory, Performance | 25 | 0 |
+| 2 — Async, Memory, Performance | 25 | 1 |
 | 3 — Web APIs & The Request Pipeline | 27 | 0 |
 | 4 — Data | 25 | 0 |
 | 5 — Production Systems & Architecture | 42 | 0 |
 | 6 — Data Structures, Algorithms, Interviews | 28 | 0 |
-| **Total** | **179** | **32** |
+| **Total** | **179** | **33** |
 
 ---
 
@@ -95,7 +95,7 @@ thread-pool starvation incident.*
 
 | # | ID | Title | Scope (one line) | Status |
 | --: | --- | --- | --- | --- |
-| 1 | `t2-01-threads-and-scheduling` | Threads, Cores, and the OS Scheduler | What a thread physically is, context switching, concurrency vs parallelism, and why threads are expensive. | planned |
+| 1 | `t2-01-threads-and-scheduling` | Threads, Cores, and the OS Scheduler | What a thread physically is, context switching, concurrency vs parallelism, and why threads are expensive. | written |
 | 2 | `t2-02-thread-pool` | The Thread Pool | Work queues, local vs global queues, work stealing, hill-climbing injection, and starvation. | planned |
 | 3 | `t2-03-what-async-really-is` | What `async` Actually Is | Async as *not occupying a thread while waiting*, I/O completion ports, and the lie that async means parallel. | planned |
 | 4 | `t2-04-task-and-valuetask` | `Task`, `Task<T>`, and `ValueTask<T>` | Promise semantics, completion sources, when `ValueTask` is worth it, and its consumption rules. | planned |

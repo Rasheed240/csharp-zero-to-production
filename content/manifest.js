@@ -174,7 +174,7 @@ window.CSPREP_MANIFEST = {
 
     /* -- Track 2: Async, Memory, and Performance Internals -------------------- */
     { id: "t2-01-threads-and-scheduling",
-      track: 2, number: 1, minutes: 45, status: "planned",
+      track: 2, number: 1, minutes: 55, status: "written",
       title: "Threads, Cores, and the OS Scheduler",
       scope: "What a thread physically is, context switching, concurrency vs parallelism, and why threads are expensive." },
     { id: "t2-02-thread-pool",
