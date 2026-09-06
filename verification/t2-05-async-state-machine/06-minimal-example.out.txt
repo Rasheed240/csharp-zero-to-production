@@ -1,0 +1,7 @@
+result : 42
+machine: <DoubleAfterDelayAsync>d__0
+struct : True
+field  : Int32 <>1__state
+field  : AsyncTaskMethodBuilder`1 <>t__builder
+field  : Int32 value
+field  : ConfiguredTaskAwaiter <>u__1

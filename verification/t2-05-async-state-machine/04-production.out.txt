@@ -1,0 +1,96 @@
+=== the incident ===
+
+  Ledger exports 200 settlements a night. A developer changed a foreach
+  loop to payments.ForEach(...) during a tidy-up. Tests passed. The job
+  ran green for nine nights. On the tenth, the bank asked where the
+  money was.
+
+  ForEach with an async lambda:
+    returned after          : 7 ms
+    written when it returned: 0 of 200
+    written 500 ms later    : 200 of 200
+    threw                   : nothing
+
+  Look at the middle two lines. The job returned having written ZERO
+  payments, in single-digit milliseconds, and exited zero. The writes
+  did all land eventually — but only because this file sleeps for half
+  a second afterwards to let them. A real job returns, its caller logs
+  success, and the process exits with the state machines still
+  suspended. Whatever had not finished never does.
+  Note also that the 9 ms is not a speed-up. It is the time taken to
+  START 200 operations and abandon them.
+
+  the same job written correctly:
+    sequential :  2,416 ms   written 200
+    concurrent :     12 ms   written 200
+
+=== and the failure that turned it into an outage ===
+
+  correct version, one payment rejected:
+    threw InvalidOperationException: rejected by settlement: BAD-9999
+    the job fails, the alert fires, someone fixes the payment.
+
+  broken version, same payment: the exception has no Task to live in.
+  AsyncVoidMethodBuilder rethrows it on a thread pool thread, and an
+  unhandled exception on a pool thread terminates the process.
+  That is what happened on night ten: not a failed export — a crash
+  loop, in a job that had been reporting success for nine nights while
+  exporting nothing.
+  (This file does not run that case, because it would take the process
+  with it. 03-failure-modes.cs demonstrates it under a context that
+  catches it.)
+
+=== how the state machine gives it away ===
+
+  state machine                                 builder
+  ExportJob.<<RunBroken>b__2_0>d                AsyncVoidMethodBuilder
+  Program.<BufferDiesEarly>d__3                 AsyncTaskMethodBuilder`1
+  Program.<BufferLivesAcross>d__4               AsyncTaskMethodBuilder`1
+  ExportJob.<RunConcurrentAsync>d__4            AsyncTaskMethodBuilder
+  ExportJob.<RunSequentialAsync>d__3            AsyncTaskMethodBuilder
+  ExportSink.<WriteAsync>d__3                   AsyncTaskMethodBuilder
+
+  AsyncVoidMethodBuilder is the tell. There is exactly one in this
+  assembly and it belongs to the lambda inside RunBroken. Nobody wrote
+  'async void' anywhere in the file — the compiler chose it because
+  ForEach wanted an Action.
+
+  Note the NAME of that first row. A state machine for a method is
+  called <Method>d__N; one for a lambda is called <<Method>b__N_M>d.
+  The first version of this file listed types whose name contained
+  'd__' and found nothing, because lambda machines do not match that.
+  This code now filters on the IAsyncStateMachine interface instead.
+  The same trap applies in a dump: grepping dumpasync output for a
+  method name will miss the lambda that is actually stuck.
+
+  Three ways to catch this before it ships:
+    1. Compiler warning CS4014 fires on an un-awaited Task call, but NOT
+       here — there is no Task. That is why it slipped through.
+    2. Microsoft.VisualStudio.Threading.Analyzers, VSTHRD101, flags an
+       async lambda being converted to a void-returning delegate. This
+       is the rule that would have caught it.
+    3. A test that asserts the sink received 200 writes rather than
+       asserting the job returned without throwing.
+
+=== part two: what a suspended state machine holds onto ===
+
+  A local that is live ACROSS an await becomes a field, so it survives
+  the suspension — and stays alive for as long as the await does.
+  A local that is finished with before the await does not.
+
+  BufferDiesEarly      hoisted locals: Task gate, Int64 <sum>5__2
+  BufferLivesAcross    hoisted locals: Task gate, Byte[] <buffer>5__2
+
+  Same 8 MB buffer, same method length, one line moved. The second one
+  keeps 8 MB reachable for the whole duration of the remote call.
+  At 500 concurrent requests that is the difference between a working
+  service and an OutOfMemoryException, and neither profiler nor code
+  review shows it, because the buffer LOOKS local and short-lived.
+
+  Measured, with 50 of each suspended at once:
+    dies before the await   :     0.0 MB held
+    lives across the await  :   400.0 MB held
+
+  The rule that falls out of this: keep large objects out of the region
+  between an allocation and an await. Finish with the buffer, or scope
+  it into a separate non-async method, before you suspend.

@@ -1,0 +1,91 @@
+===== Exercise 1: which locals become fields? =====
+
+  Predict, then read. Three locals, one await, three different fates.
+
+    hoisted : Task gate
+    hoisted : Int32 <across>5__2
+
+    'before' is used only before the await   -> NOT hoisted (a real local)
+    'across' is used on both sides           -> hoisted
+    'after'  is assigned after the await     -> NOT hoisted
+  The rule is liveness, not declaration order: a local is hoisted only
+  if its value must survive a suspension. This is why moving one line
+  can change a method's memory profile without changing what it does.
+
+===== Exercise 2: how many state machines does this create? =====
+
+  state machines in this assembly : 13
+  one per async METHOD and one per async LAMBDA:
+    <>c.<<RegisterHandlers>b__12_0>d
+    <>c.<<RegisterHandlers>b__12_1>d
+    Program.<<ValidatedThrows>g__Inner|9_0>d
+    Program.<A>d__3
+    Program.<B>d__4
+    Program.<C>d__5
+    Program.<D>d__6
+    Program.<E>d__7
+    Program.<FiveLookups>d__11
+    Cache.<GetAsync>d__5
+    Program.<ThreeLocals>d__2
+    Program.<ThrowsAfterAwait>d__10
+    Program.<ThrowsBeforeAwait>d__8
+
+  Note that the number of AWAITS does not affect the count. Ten awaits
+  in one method is one state machine with ten resume points; one await
+  in each of ten methods is ten state machines.
+
+===== Exercise 3: which of these allocate? =====
+
+  variant                                bytes/call
+    async Task<int>, returns 4242              72
+    async Task<int>, returns 1                  0
+    async Task (no result)                      0
+    async ValueTask<int>, returns 4242          0
+    async Task<int>, suspends                  96
+
+  'async Task' with no result allocates nothing on the synchronous path:
+  there is a shared already-completed Task singleton to hand back. Only
+  Task<T> for an uncached T has to build one.
+
+===== Exercise 4: where does the exception surface? =====
+
+  (a) throw BEFORE the first await, method returns Task
+      the call itself returned normally : task status Faulted
+      it surfaced at the await : thrown before any await
+      An async method NEVER throws at the call site, even for an
+      argument check. The exception is captured into the Task.
+      This is why argument validation belongs in a non-async wrapper:
+
+  (b) the same check in a non-async wrapper
+      threw at the CALL SITE, before any Task existed
+
+  (c) throw AFTER an await
+      surfaced at the await : thrown after an await
+
+===== Exercise 5: count the suspensions =====
+
+  Same method, same five awaits, different cache temperature.
+
+  warm entries   suspensions   bytes/run   ms/run
+             5             0           0        0
+             3             2         760       34
+             0             5        1624       80
+
+  The source code did not change between those three rows. The number
+  of awaits did not change. What changed is how many of them had to
+  wait, and that is the only thing the cost depends on.
+  This is the single most useful idea in the module: async is cheap
+  when it does not suspend, and you control how often it suspends.
+
+===== Exercise 6: find the async void =====
+
+  state machines using AsyncVoidMethodBuilder : 2
+    <>c.<<RegisterHandlers>b__12_0>d
+    <>c.<<RegisterHandlers>b__12_1>d
+
+  Neither of those has the words 'async void' at its declaration. One is
+  a lambda passed to List<T>.ForEach; the other is passed to a Timer.
+  Searching the source for 'async void' would find neither.
+  Reflecting over the builder type finds both, and so does VSTHRD101.
+
+  (checksum 946068230)

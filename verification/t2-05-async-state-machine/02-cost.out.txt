@@ -1,0 +1,84 @@
+=== 1. an await that never suspends ===
+
+  Every one of these returns a value the caller can have immediately.
+  None of them suspends. The differences are all in what the compiler
+  is forced to build before it finds that out.
+
+  method                            bytes/call   ns/call
+  plain sync method                           0         7
+  async Task<int>, no await at all           72        41
+  async Task<int>, await completed           72        63
+  async ValueTask<int>, await done            0        54
+  Task.FromResult, not async                 72        21
+  ValueTask, not async                        0        16
+
+  Read the first three rows together. The sync method allocates nothing.
+  The async methods allocate even though NOTHING SUSPENDED, because the
+  compiler must hand back a Task before it can know that.
+  ValueTask is the row that fixes the allocation: 0 bytes on this path.
+  Note that it is also the SLOWEST row in nanoseconds. It buys memory,
+  not speed, and the two are not the same currency — which is why the
+  previous module made the choice a question about hit rate rather than
+  a general recommendation.
+
+=== 1b. the same method returning 1 instead of 4242 ===
+
+  method                            bytes/call   ns/call
+  async Task<int> returning 4242             72        65
+  async Task<int> returning 1                 0        40
+  async Task<bool> returning true             0        39
+
+  The runtime keeps pre-made Task objects for small ints and for both
+  bools, so an async method returning one of those can allocate nothing
+  at all. Worth knowing for two reasons: it is a real optimisation you
+  get for free on Task<bool>, and it is a trap when benchmarking — a
+  microbenchmark that returns 1 will tell you async is free.
+
+=== 2. an await that DOES suspend ===
+
+  Same shape, but the awaited thing has not finished, so the state
+  machine must be boxed onto the heap and a continuation registered.
+
+  method                            bytes/call   ns/call
+  async Task<int>, suspends                  96     1,266
+  async ValueTask<int>, suspends            104     1,062
+
+  Compare with section 1. Suspension is where the cost is: the boxed
+  state machine, the continuation delegate, the queue, the thread
+  handoff. And ValueTask costs MORE than Task here, because a suspended
+  ValueTask allocates a Task and then wraps it in a struct.
+
+=== 3. how often the state machine actually suspends ===
+
+  5 awaits, 0 of which had to wait -> suspended 0 time(s)
+  5 awaits, 3 of which had to wait -> suspended 3 time(s)
+
+  This counts calls to OnCompleted on the awaiter, which is the runtime
+  saying: not finished, call me back. MoveNext runs once to start plus
+  once per resumption, so those two runs entered MoveNext 1 and 4 times
+  for the same five awaits.
+  An await that completes synchronously costs no extra MoveNext: the
+  state machine falls straight through it inside the same call. That is
+  why an async method over a warm cache is nearly free and the same
+  method over a cold one is not — the number of awaits did not change.
+
+=== 4. how much a deep async call chain costs ===
+
+  depth   bytes/call   ns/call   ns per layer
+      1           72        43             43
+      2          144        83             42
+      4          288       231             58
+      8          576       548             68
+     16         1152       267             17
+
+  Nothing suspends here, so each extra layer is one more state machine
+  and one more Task. Allocation is exactly linear: 72 bytes per layer,
+  every time, which is the same 72 from section 1.
+  Time is SUB-linear — the per-layer column falls as depth grows, because
+  the JIT inlines more of the chain once it is hot. Do not read that as a
+  reason to nest deeply: it is a microbenchmark with no real work in it,
+  and the allocation column is the one that follows you into production.
+  The honest summary is that a deep async chain that never suspends is
+  cheap and predictable. The cost you care about is in section 2.
+
+  (checksum 16578540000)

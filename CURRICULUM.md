@@ -37,12 +37,12 @@ No site machinery (`assets/js/*`, `assets/css/*`, `index.html`) is touched. See 
 | Track | Modules | Written / Frozen |
 | --- | ---: | ---: |
 | 1 — Language Foundations | 32 | 32 |
-| 2 — Async, Memory, Performance | 25 | 1 |
-| 3 — Web APIs & The Request Pipeline | 27 | 0 |
+| 2 — Async, Memory, Performance | 25 | 25 |
+| 3 — Web APIs & The Request Pipeline | 27 | 20 |
 | 4 — Data | 25 | 0 |
 | 5 — Production Systems & Architecture | 42 | 0 |
 | 6 — Data Structures, Algorithms, Interviews | 28 | 0 |
-| **Total** | **179** | **33** |
+| **Total** | **179** | **77** |
 
 ---
 
@@ -96,30 +96,30 @@ thread-pool starvation incident.*
 | # | ID | Title | Scope (one line) | Status |
 | --: | --- | --- | --- | --- |
 | 1 | `t2-01-threads-and-scheduling` | Threads, Cores, and the OS Scheduler | What a thread physically is, context switching, concurrency vs parallelism, and why threads are expensive. | written |
-| 2 | `t2-02-thread-pool` | The Thread Pool | Work queues, local vs global queues, work stealing, hill-climbing injection, and starvation. | planned |
-| 3 | `t2-03-what-async-really-is` | What `async` Actually Is | Async as *not occupying a thread while waiting*, I/O completion ports, and the lie that async means parallel. | planned |
-| 4 | `t2-04-task-and-valuetask` | `Task`, `Task<T>`, and `ValueTask<T>` | Promise semantics, completion sources, when `ValueTask` is worth it, and its consumption rules. | planned |
-| 5 | `t2-05-async-state-machine` | The `async`/`await` State Machine | Reading the compiler-generated struct, `MoveNext`, awaiters, and what each `await` actually costs. | planned |
-| 6 | `t2-06-synchronizationcontext` | `SynchronizationContext` and `ConfigureAwait` | Context capture, why ASP.NET Core has no context, when `ConfigureAwait(false)` matters, and library rules. | planned |
-| 7 | `t2-07-sync-over-async-deadlocks` | Deadlocks and Sync-Over-Async | `.Result`/`.Wait()`, the classic deadlock, thread-pool exhaustion, and how to actually fix a blocking call. | planned |
-| 8 | `t2-08-cancellation` | Cancellation Tokens | Cooperative cancellation, linked sources, timeouts, and threading tokens end to end through a request. | planned |
-| 9 | `t2-09-iasyncenumerable` | `IAsyncEnumerable<T>` | Async streams, `await foreach`, cancellation in streams, and streaming a query result without buffering. | planned |
-| 10 | `t2-10-parallelism` | Parallelism: `Parallel`, PLINQ, and `Task.WhenAll` | CPU-bound work, partitioning, degree of parallelism, and why parallel is not always faster. | planned |
-| 11 | `t2-11-race-conditions` | Race Conditions and Memory Visibility | Interleaving, torn reads, the memory model, `volatile`, and why "it works on my machine" is meaningless here. | planned |
-| 12 | `t2-12-locking` | `lock`, `Monitor`, and Lock Design | Mutual exclusion, lock granularity, lock ordering, deadlock avoidance, and `System.Threading.Lock` in .NET 9+. | planned |
-| 13 | `t2-13-interlocked-and-lockfree` | `Interlocked` and Lock-Free Basics | Atomic operations, compare-and-swap, spin waiting, and when lock-free is a mistake. | planned |
-| 14 | `t2-14-async-coordination` | `SemaphoreSlim`, Channels, and Async Coordination | Async-safe throttling, producer/consumer with `System.Threading.Channels`, and bounded backpressure. | planned |
-| 15 | `t2-15-concurrent-collections` | Concurrent Collections | `ConcurrentDictionary` and friends, their atomicity guarantees, `GetOrAdd` re-entrancy, and when to just lock. | planned |
-| 16 | `t2-16-gc-fundamentals` | Garbage Collection Fundamentals | Managed heap, roots, mark/sweep/compact, generations 0/1/2, and what a collection pauses. | planned |
-| 17 | `t2-17-gc-tuning` | LOH, Server vs Workstation GC, and Allocation Pressure | Large object heap, fragmentation, GC modes, `GCSettings`, DATAS in .NET 8+, and reading GC counters. | planned |
-| 18 | `t2-18-finalisers-and-idisposable` | `IDisposable`, `IAsyncDisposable`, and Finalisers | Deterministic cleanup, the dispose pattern, `using` declarations, and why finalisers are a last resort. | planned |
-| 19 | `t2-19-span-and-memory` | `Span<T>` and `Memory<T>` | Stack-only slices, `ref struct` rules, slicing without allocating, and where `Memory<T>` is required instead. | planned |
-| 20 | `t2-20-zero-allocation` | Zero-Allocation Techniques | `stackalloc`, `ArrayPool<T>`, `ObjectPool`, `SearchValues`, and rewriting a hot path to allocate nothing. | planned |
-| 21 | `t2-21-string-without-allocation` | String Handling Without Allocation | `ReadOnlySpan<char>`, `string.Create`, interpolated string handlers, UTF-8 literals, and parsing in place. | planned |
-| 22 | `t2-22-streams-and-buffering` | Streams, Buffering, and Async I/O | Stream contracts, buffer sizing, `PipeReader` vs `Stream`, and copying files without wasting memory. | planned |
-| 23 | `t2-23-pipelines` | `System.IO.Pipelines` | Why parsing network data with `Stream` is hard, back-pressure, `SequenceReader`, and a real protocol parser. | planned |
-| 24 | `t2-24-benchmarkdotnet` | Benchmarking with BenchmarkDotNet | Harness setup, warmup, memory diagnosers, reading the output honestly, and the benchmarks that lie. | planned |
-| 25 | `t2-25-diagnostics-tooling` | Profiling and Production Diagnostics | `dotnet-counters`, `dotnet-trace`, `dotnet-dump`, `dotnet-gcdump`, and walking a real memory dump. | planned |
+| 2 | `t2-02-thread-pool` | The Thread Pool | Work queues, local vs global queues, work stealing, hill-climbing injection, and starvation. | written |
+| 3 | `t2-03-what-async-really-is` | What `async` Actually Is | Async as *not occupying a thread while waiting*, I/O completion ports, and the lie that async means parallel. | written |
+| 4 | `t2-04-task-and-valuetask` | `Task`, `Task<T>`, and `ValueTask<T>` | Promise semantics, completion sources, when `ValueTask` is worth it, and its consumption rules. | written |
+| 5 | `t2-05-async-state-machine` | The `async`/`await` State Machine | Reading the compiler-generated struct, `MoveNext`, awaiters, and what each `await` actually costs. | written |
+| 6 | `t2-06-synchronizationcontext` | `SynchronizationContext` and `ConfigureAwait` | Context capture, why ASP.NET Core has no context, when `ConfigureAwait(false)` matters, and library rules. | written |
+| 7 | `t2-07-sync-over-async-deadlocks` | Deadlocks and Sync-Over-Async | `.Result`/`.Wait()`, the classic deadlock, thread-pool exhaustion, and how to actually fix a blocking call. | written |
+| 8 | `t2-08-cancellation` | Cancellation Tokens | Cooperative cancellation, linked sources, timeouts, and threading tokens end to end through a request. | written |
+| 9 | `t2-09-iasyncenumerable` | `IAsyncEnumerable<T>` | Async streams, `await foreach`, cancellation in streams, and streaming a query result without buffering. | written |
+| 10 | `t2-10-parallelism` | Parallelism: `Parallel`, PLINQ, and `Task.WhenAll` | CPU-bound work, partitioning, degree of parallelism, and why parallel is not always faster. | written |
+| 11 | `t2-11-race-conditions` | Race Conditions and Memory Visibility | Interleaving, torn reads, the memory model, `volatile`, and why "it works on my machine" is meaningless here. | written |
+| 12 | `t2-12-locking` | `lock`, `Monitor`, and Lock Design | Mutual exclusion, lock granularity, lock ordering, deadlock avoidance, and `System.Threading.Lock` in .NET 9+. | written |
+| 13 | `t2-13-interlocked-and-lockfree` | `Interlocked` and Lock-Free Basics | Atomic operations, compare-and-swap, spin waiting, and when lock-free is a mistake. | written |
+| 14 | `t2-14-async-coordination` | `SemaphoreSlim`, Channels, and Async Coordination | Async-safe throttling, producer/consumer with `System.Threading.Channels`, and bounded backpressure. | written |
+| 15 | `t2-15-concurrent-collections` | Concurrent Collections | `ConcurrentDictionary` and friends, their atomicity guarantees, `GetOrAdd` re-entrancy, and when to just lock. | written |
+| 16 | `t2-16-gc-fundamentals` | Garbage Collection Fundamentals | Managed heap, roots, mark/sweep/compact, generations 0/1/2, and what a collection pauses. | written |
+| 17 | `t2-17-gc-tuning` | LOH, Server vs Workstation GC, and Allocation Pressure | Large object heap, fragmentation, GC modes, `GCSettings`, DATAS in .NET 8+, and reading GC counters. | written |
+| 18 | `t2-18-finalisers-and-idisposable` | `IDisposable`, `IAsyncDisposable`, and Finalisers | Deterministic cleanup, the dispose pattern, `using` declarations, and why finalisers are a last resort. | written |
+| 19 | `t2-19-span-and-memory` | `Span<T>` and `Memory<T>` | Stack-only slices, `ref struct` rules, slicing without allocating, and where `Memory<T>` is required instead. | written |
+| 20 | `t2-20-zero-allocation` | Zero-Allocation Techniques | `stackalloc`, `ArrayPool<T>`, `ObjectPool`, `SearchValues`, and rewriting a hot path to allocate nothing. | written |
+| 21 | `t2-21-string-without-allocation` | String Handling Without Allocation | `ReadOnlySpan<char>`, `string.Create`, interpolated string handlers, UTF-8 literals, and parsing in place. | written |
+| 22 | `t2-22-streams-and-buffering` | Streams, Buffering, and Async I/O | Stream contracts, buffer sizing, `PipeReader` vs `Stream`, and copying files without wasting memory. | written |
+| 23 | `t2-23-pipelines` | `System.IO.Pipelines` | Why parsing network data with `Stream` is hard, back-pressure, `SequenceReader`, and a real protocol parser. | written |
+| 24 | `t2-24-benchmarkdotnet` | Benchmarking with BenchmarkDotNet | Harness setup, warmup, memory diagnosers, reading the output honestly, and the benchmarks that lie. | written |
+| 25 | `t2-25-diagnostics-tooling` | Profiling and Production Diagnostics | `dotnet-counters`, `dotnet-trace`, `dotnet-dump`, `dotnet-gcdump`, and walking a real memory dump. | written |
 
 ---
 
@@ -127,26 +127,26 @@ thread-pool starvation incident.*
 
 | # | ID | Title | Scope (one line) | Status |
 | --: | --- | --- | --- | --- |
-| 1 | `t3-01-http-fundamentals` | HTTP As It Actually Behaves | Methods, status codes, headers, content negotiation, keep-alive, HTTP/2 and /3, and idempotency/safety semantics. | planned |
-| 2 | `t3-02-hosting-model` | The Hosting Model | `WebApplication`, the generic host, service registration vs pipeline building, startup order, graceful shutdown. | planned |
-| 3 | `t3-03-kestrel` | Kestrel | The socket-to-request path, connection limits, request limits, timeouts, TLS, and reverse-proxy deployment. | planned |
-| 4 | `t3-04-middleware-pipeline` | The Middleware Pipeline | Ordering as behaviour, `Use`/`Run`/`Map`, short-circuiting, writing custom middleware, and terminal middleware. | planned |
-| 5 | `t3-05-routing` | Routing and Endpoints | Route templates, constraints, endpoint metadata, route groups, and link generation. | planned |
-| 6 | `t3-06-minimal-vs-controllers` | Minimal APIs vs Controllers | The real trade-offs — testability, filters, conventions, discoverability — with an honest recommendation. | planned |
-| 7 | `t3-07-model-binding` | Model Binding | Sources, binding rules, custom binders, `[AsParameters]`, and binding failures that silently produce nulls. | planned |
-| 8 | `t3-08-validation` | Validation | Data annotations, `IValidatableObject`, FluentValidation, minimal-API validation in .NET 10, and layering rules. | planned |
-| 9 | `t3-09-problem-details` | `ProblemDetails` and Error Contracts | RFC 9457, exception handling middleware, a consistent error envelope, and never leaking internals. | planned |
-| 10 | `t3-10-dependency-injection` | Dependency Injection | Inversion of control from first principles, the container, constructor injection, and composition roots. | planned |
-| 11 | `t3-11-di-lifetimes` | DI Lifetimes and the Bugs They Cause | Singleton/scoped/transient, captive dependencies, scope in background services, and `DbContext` disasters. | planned |
-| 12 | `t3-12-configuration` | Configuration | Providers, precedence, binding, reloading, and configuration that differs per environment. | planned |
-| 13 | `t3-13-options-pattern` | The Options Pattern | `IOptions` vs `IOptionsSnapshot` vs `IOptionsMonitor`, validation on startup, and named options. | planned |
-| 14 | `t3-14-secrets` | Environments and Secret Handling | User secrets, environment variables, key vaults, what must never reach source control, and rotation. | planned |
-| 15 | `t3-15-api-versioning` | API Versioning | URL vs header vs media-type versioning, deprecation, and evolving a contract without breaking clients. | planned |
-| 16 | `t3-16-pagination` | Pagination, Filtering, and Sorting | Offset vs keyset pagination, stable ordering, filter contracts, and not letting clients DoS your database. | planned |
-| 17 | `t3-17-file-upload` | File Upload and Storage | Multipart handling, streaming large uploads, size limits, content sniffing, virus scanning, and blob storage. | planned |
-| 18 | `t3-18-openapi` | OpenAPI and Documentation | Built-in OpenAPI in .NET 9+/10, schema shaping, examples, and keeping docs honest. | planned |
-| 19 | `t3-19-health-checks` | Health Checks | Liveness vs readiness vs startup, dependency checks, and the health check that took down the cluster. | planned |
-| 20 | `t3-20-feature-flags` | Feature Flags | Toggle types, `Microsoft.FeatureManagement`, targeting filters, flag lifecycle, and removing dead flags. | planned |
+| 1 | `t3-01-http-fundamentals` | HTTP As It Actually Behaves | Methods, status codes, headers, content negotiation, keep-alive, HTTP/2 and /3, and idempotency/safety semantics. | written |
+| 2 | `t3-02-hosting-model` | The Hosting Model | `WebApplication`, the generic host, service registration vs pipeline building, startup order, graceful shutdown. | written |
+| 3 | `t3-03-kestrel` | Kestrel | The socket-to-request path, connection limits, request limits, timeouts, TLS, and reverse-proxy deployment. | written |
+| 4 | `t3-04-middleware-pipeline` | The Middleware Pipeline | Ordering as behaviour, `Use`/`Run`/`Map`, short-circuiting, writing custom middleware, and terminal middleware. | written |
+| 5 | `t3-05-routing` | Routing and Endpoints | Route templates, constraints, endpoint metadata, route groups, and link generation. | written |
+| 6 | `t3-06-minimal-vs-controllers` | Minimal APIs vs Controllers | The real trade-offs — testability, filters, conventions, discoverability — with an honest recommendation. | written |
+| 7 | `t3-07-model-binding` | Model Binding | Sources, binding rules, custom binders, `[AsParameters]`, and binding failures that silently produce nulls. | written |
+| 8 | `t3-08-validation` | Validation | Data annotations, `IValidatableObject`, FluentValidation, minimal-API validation in .NET 10, and layering rules. | written |
+| 9 | `t3-09-problem-details` | `ProblemDetails` and Error Contracts | RFC 9457, exception handling middleware, a consistent error envelope, and never leaking internals. | written |
+| 10 | `t3-10-dependency-injection` | Dependency Injection | Inversion of control from first principles, the container, constructor injection, and composition roots. | written |
+| 11 | `t3-11-di-lifetimes` | DI Lifetimes and the Bugs They Cause | Singleton/scoped/transient, captive dependencies, scope in background services, and `DbContext` disasters. | written |
+| 12 | `t3-12-configuration` | Configuration | Providers, precedence, binding, reloading, and configuration that differs per environment. | written |
+| 13 | `t3-13-options-pattern` | The Options Pattern | `IOptions` vs `IOptionsSnapshot` vs `IOptionsMonitor`, validation on startup, and named options. | written |
+| 14 | `t3-14-secrets` | Environments and Secret Handling | User secrets, environment variables, key vaults, what must never reach source control, and rotation. | written |
+| 15 | `t3-15-api-versioning` | API Versioning | URL vs header vs media-type versioning, deprecation, and evolving a contract without breaking clients. | written |
+| 16 | `t3-16-pagination` | Pagination, Filtering, and Sorting | Offset vs keyset pagination, stable ordering, filter contracts, and not letting clients DoS your database. | written |
+| 17 | `t3-17-file-upload` | File Upload and Storage | Multipart handling, streaming large uploads, size limits, content sniffing, virus scanning, and blob storage. | written |
+| 18 | `t3-18-openapi` | OpenAPI and Documentation | Built-in OpenAPI in .NET 9+/10, schema shaping, examples, and keeping docs honest. | written |
+| 19 | `t3-19-health-checks` | Health Checks | Liveness vs readiness vs startup, dependency checks, and the health check that took down the cluster. | written |
+| 20 | `t3-20-feature-flags` | Feature Flags | Toggle types, `Microsoft.FeatureManagement`, targeting filters, flag lifecycle, and removing dead flags. | written |
 | 21 | `t3-21-hosted-services` | `IHostedService` and `BackgroundService` | Lifetime hooks, long-running loops, scope creation, exception handling, and graceful shutdown. | planned |
 | 22 | `t3-22-scheduled-jobs` | Scheduled and Queued Jobs: Hangfire and Quartz | Persistent job storage, retries, cron scheduling, distributed execution, and job idempotency. | planned |
 | 23 | `t3-23-signalr` | Real-Time with SignalR | Hubs, transports and fallback, groups, scale-out with a backplane, and connection lifecycle handling. | planned |

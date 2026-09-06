@@ -1,0 +1,103 @@
+=== 1. two different stacks, and only one of them is real ===
+
+  stack trace as thrown from three async frames down:
+    at Program.InnerAsync() in C:\Users\rashe\Documents\Work\Mine\My C# Prep\verification\t2-05-async-state-machine\03-failure-modes.cs:line 199
+    at Program.MiddleAsync() in C:\Users\rashe\Documents\Work\Mine\My C# Prep\verification\t2-05-async-state-machine\03-failure-modes.cs:line 193
+    at Program.OuterAsync() in C:\Users\rashe\Documents\Work\Mine\My C# Prep\verification\t2-05-async-state-machine\03-failure-modes.cs:line 188
+    at Program.Main() in C:\Users\rashe\Documents\Work\Mine\My C# Prep\verification\t2-05-async-state-machine\03-failure-modes.cs:line 25
+
+  That is clean: Inner, Middle, Outer, Main, with line numbers, exactly
+  as if none of it were async. Since .NET Core 2.1 the runtime rewrites
+  async frames back into the method names you wrote, so the MoveNext and
+  ThrowForNonSuccess noise you will see in older articles is gone.
+
+  But that trace is RECONSTRUCTED. Here is the physical stack, captured
+  inside the same method at the same moment, after the suspension:
+
+       at Program.PhysicalStackAsync()
+       at System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1.AsyncStateMachineBox`1.ExecutionContextCallback(Object s)
+       at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)
+       at System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1.AsyncStateMachineBox`1.MoveNext(Thread threadPoolThread)
+       at System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1.AsyncStateMachineBox`1.MoveNext()
+       at System.Threading.Tasks.AwaitTaskContinuation.RunOrScheduleAction(IAsyncStateMachineBox box, Boolean allowInlining)
+
+  No Middle. No Outer. No Main. The thread running this code has never
+  heard of them — it picked the continuation off the pool queue. Those
+  frames were on a stack that unwound when the method first suspended.
+  The exception trace can show them only because each await records the
+  frame on the way through and the runtime stitches them together.
+
+  This is the practical consequence: anything that reads the CURRENT
+  stack rather than an exception sees the short version. That includes
+  most profilers' sampled stacks, clrstack in a dump, and any logging
+  helper that calls new StackTrace() to work out who called it.
+
+=== 2. async void: the exception the caller cannot catch ===
+
+  This is inside a try/catch. Watch it not work.
+  the catch block did NOT run
+  the exception went here instead : InvalidOperationException "nobody can catch me"
+
+  An async void method has no Task, so there is nothing to await and
+  nothing to hold the exception. AsyncVoidMethodBuilder rethrows it on
+  the captured SynchronizationContext instead.
+  Here a test context caught it. In ASP.NET Core there is no context, so
+  it is rethrown on a thread pool thread and TERMINATES THE PROCESS.
+  That is the whole rule: async void only for event handlers, never for
+  anything else, because it converts a handled error into a crash.
+
+=== 3. the async lambda that silently became async void ===
+
+  async () => { ... } assigned to Action     : returns void  — this is async void
+  the same lambda assigned to Func<Task>     : returns Task
+
+  Identical source text, different compiled shape, decided entirely by
+  the type it was assigned to. Any API taking an Action or a void-
+  returning delegate will silently take an async lambda and give you
+  case 2. List.ForEach, Timer callbacks, older event APIs and many test
+  helpers are all shaped this way.
+  The tell is that the call site does not await anything and nobody
+  complains — because there is no Task to complain about.
+
+=== 4. the unobserved Task: a failure with no symptom ===
+
+  the task faulted          : True
+  it holds                  : dropped on the floor
+  and nothing was printed, logged or thrown.
+  Even after collection, still silent: since .NET 4.5 an unobserved
+  Task exception does NOT crash the process. It evaporates.
+  This is the quietest failure in .NET. The symptom is not an error —
+  it is a piece of work that never happened.
+  Subscribe to TaskScheduler.UnobservedTaskException to find them:
+  UnobservedTaskException fired : 1 time(s)
+
+=== 5. what a suspended state machine looks like in a dump ===
+
+  the task status is        : WaitingForActivation
+  threads in the process    : 12
+  There is no thread to find. The method is suspended, so it appears in
+  NO stack trace on NO thread — it exists only as a boxed state machine
+  object on the heap, referenced by whatever will complete it.
+
+  This is why 'clrstack -all' finds nothing for a hung async request and
+  why people conclude the request vanished. The command that does find
+  it walks the heap instead of the stacks:
+
+    dotnet-dump collect --process-id <pid>
+    dotnet-dump analyze <file>
+    > dumpasync                 all suspended state machines
+    > dumpasync --stats         grouped by type, to find the pile-up
+    > dumpasync --completed     include ones that have finished
+
+  dumpasync reconstructs the logical async call chain from the heap: for
+  each state machine it shows the type, the state field, and the machine
+  that will be resumed when it completes. That chain is the stack trace
+  the physical stacks no longer have.
+
+  What to look for: thousands of the SAME state machine type all sitting
+  at the same state number means thousands of requests are blocked on the
+  same await. The state number tells you WHICH await — count the awaits
+  in the method body and the resume points are numbered in order.
+
+  in this process that type is : <StuckAsync>d__7
+  and its state field is       : <>1__state

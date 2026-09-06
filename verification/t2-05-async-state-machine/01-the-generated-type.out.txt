@@ -1,0 +1,70 @@
+--- the compiler generated a type per async method ---
+
+  <AddAsync>d__0
+    nested in   : Program
+    is a STRUCT : True
+    interfaces  : IAsyncStateMachine
+    field       : Int32                                    <>1__state
+    field       : AsyncTaskMethodBuilder`1                 <>t__builder
+    field       : Int32                                    a
+    field       : Int32                                    b
+    field       : Int32                                    <partial>5__2
+    field       : ConfiguredTaskAwaiter                    <>u__1
+
+  <NoAwaitAsync>d__1
+    nested in   : Program
+    is a STRUCT : True
+    interfaces  : IAsyncStateMachine
+    field       : Int32                                    <>1__state
+    field       : AsyncTaskMethodBuilder                   <>t__builder
+    field       : TaskAwaiter                              <>u__1
+
+  <WaitForSomething>d__3
+    nested in   : Program
+    is a STRUCT : True
+    interfaces  : IAsyncStateMachine
+    field       : Int32                                    <>1__state
+    field       : AsyncTaskMethodBuilder`1                 <>t__builder
+    field       : CountdownAwaiter                         <>u__1
+
+--- what those fields are ---
+  <>1__state    the resume point. -1 means running or done.
+  <>t__builder  AsyncTaskMethodBuilder: owns the Task and decides
+                whether to complete synchronously or suspend.
+  <>u__1        the AWAITER for the thing being awaited. One field
+                per distinct awaiter type in the method.
+  a, b, partial the parameters and locals that must survive the
+                suspension. This is the key idea: a local that
+                lives across an await is not on the stack — it is
+                a field of an object that outlives the stack frame.
+
+--- it is a STRUCT, which is the optimisation that matters ---
+  A struct state machine lives on the stack while the method runs
+  synchronously. If the method finishes without ever suspending, it
+  is never boxed and never reaches the heap.
+  Only when it must suspend does the builder box it onto the heap so
+  it can outlive the stack frame. That is why the allocation numbers
+  in 02-cost.cs differ so sharply between the two paths.
+  (In a Debug build it is generated as a CLASS instead, so this same
+  program compiled with -c Debug reports is-a-STRUCT False.)
+
+--- MoveNext is the method body, rewritten ---
+  MoveNext exists : True
+  declared by     : <AddAsync>d__0
+  Your method body is now a switch on <>1__state inside MoveNext.
+  Each await is a case label: run to here, save state, return.
+  When the awaited thing completes, MoveNext is called again and
+  the switch jumps to where it left off.
+
+--- the awaiter pattern is structural, not an interface ---
+  awaiter type    : ConfiguredTaskAwaiter
+  IsCompleted     : True
+  GetResult()     : True
+  INotifyCompletion : True
+  await works on ANY type with GetAwaiter() returning something
+  with IsCompleted, GetResult() and OnCompleted(). No interface is
+  required — which is why you can await your own types, and why
+  an extension method can make a third-party type awaitable.
+
+--- awaiting a custom type, to prove the point ---
+  awaited a Countdown and got : counted down from 3
