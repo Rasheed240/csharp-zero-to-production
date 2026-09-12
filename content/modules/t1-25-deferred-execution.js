@@ -205,7 +205,8 @@ class Program
   the third-largest element cannot be known without seeing every element.</p>
 
   <div class="callout callout--note">
-    <p><strong>"Deferred" and "streaming" are different properties.</strong> Deferred means
+    <h4>"Deferred" and "streaming" are different properties</h4>
+    <p>Deferred means
     <em>nothing happens until you enumerate</em>. Streaming means <em>once you enumerate, results
     come out before the source is exhausted</em>. <code>OrderBy</code> is deferred and not
     streaming, which is exactly the combination that surprises people: it looks free until it is
@@ -394,7 +395,8 @@ class Program
   not an <code>ICollection&lt;T&gt;</code> and there is nothing to read but the elements.</p>
 
   <div class="callout callout--gotcha">
-    <p><strong>The fast path is invisible at the call site.</strong> <code>items.Count()</code> is
+    <h4>The fast path is invisible at the call site</h4>
+    <p><code>items.Count()</code> is
     the same source text whether it is an O(1) property read or an O(n) walk of a filter chain. That
     is the trap in
     <a href="#/m/t1-20-ienumerable-vs-icollection">IEnumerable vs ICollection vs IList vs
@@ -788,7 +790,8 @@ class Program
   Neither is LINQ overhead; both are the cost of the shape you asked for.</p>
 
   <div class="callout callout--note">
-    <p><strong><code>ToList</code> on a known size is cheaper written by hand.</strong> The doubling
+    <h4><code>ToList</code> on a known size is cheaper written by hand</h4>
+    <p>The doubling
     waste disappears with <code>new List&lt;T&gt;(capacity)</code>, and
     <code>ToArray()</code> on a source whose count is known allocates exactly once. That is worth
     doing in a hot path and not worth doing anywhere else.</p>
@@ -985,8 +988,8 @@ var result = first.Where(o =&gt; o.Amount &gt; 100m).ToList();</code></pre>
   region and filters them in your process.</p>
 
   <div class="callout callout--gotcha">
-    <p><strong><code>var</code> protects you here and an explicit type does not.</strong>
-    <code>var</code> keeps whatever static type the expression had, so a chain written with
+    <h4><code>var</code> protects you here and an explicit type does not</h4>
+    <p><code>var</code> keeps whatever static type the expression had, so a chain written with
     <code>var</code> stays <code>IQueryable&lt;T&gt;</code> all the way down. Writing
     <code>IEnumerable&lt;T&gt;</code> — the usual advice about accepting the least specific
     type — is exactly what drops the translation. This is the one place where naming the interface
@@ -1005,7 +1008,8 @@ var result = first.Where(o =&gt; o.Amount &gt; 100m).ToList();</code></pre>
   was removed precisely because it turned a small query into a full table scan without saying so.</p>
 
   <div class="callout callout--note">
-    <p><strong>This is a preview, not the full story.</strong> Expression trees, providers, and the
+    <h4>This is a preview, not the full story</h4>
+    <p>Expression trees, providers, and the
     rules for what EF Core can translate are a subject of their own. What matters at this point is
     the shape: <strong><code>IEnumerable&lt;T&gt;</code> defers <em>calling delegates</em>;
     <code>IQueryable&lt;T&gt;</code> defers <em>describing a query</em></strong> — and the difference
@@ -1092,27 +1096,31 @@ foreach (var o in orders) Save(o);</code></pre>
   <h2>How to debug this class of problem</h2>
 
   <div class="callout callout--debug">
-    <p><strong>Something is unexpectedly slow and the profiler blames a predicate.</strong> Count the
+    <h4>Something is unexpectedly slow and the profiler blames a predicate</h4>
+    <p>Count the
     calls before optimising the predicate. Add a counter to the lambda, or set a breakpoint with a
     hit count, and compare it to the source size. A multiple of the source size means multiple
     enumeration, and materialising once fixes it without touching the predicate at all.</p>
   </div>
 
   <div class="callout callout--debug">
-    <p><strong><code>ObjectDisposedException</code> from a line that already succeeded.</strong> Look
+    <h4><code>ObjectDisposedException</code> from a line that already succeeded</h4>
+    <p>Look
     for a method returning <code>IEnumerable&lt;T&gt;</code> whose body has a <code>using</code>.
     The exception's <code>ObjectName</code> names the disposed type, which usually names the method
     to fix. Adding <code>.ToList()</code> inside the <code>using</code> is the whole repair.</p>
   </div>
 
   <div class="callout callout--debug">
-    <p><strong>A query gives a different answer than it did five lines earlier.</strong> List the
+    <h4>A query gives a different answer than it did five lines earlier</h4>
+    <p>List the
     variables its lambdas mention and check whether any is assigned between the two points.
     Everything a lambda mentions is read at enumeration, not at definition.</p>
   </div>
 
   <div class="callout callout--debug">
-    <p><strong>Deciding whether a variable holds data or a recipe.</strong> Print
+    <h4>Deciding whether a variable holds data or a recipe</h4>
+    <p>Print
     <code>x.GetType().Name</code>. <code>List&#96;1</code> or <code>Reading[]</code> is data;
     anything containing <code>Iterator</code>, <code>WhereSelect</code>,
     <code>OrderedEnumerable</code> or <code>GroupedEnumerable</code> is a recipe that has not
@@ -1120,14 +1128,16 @@ foreach (var o in orders) Save(o);</code></pre>
   </div>
 
   <div class="callout callout--debug">
-    <p><strong>Watch out for the debugger changing the answer.</strong> Hovering over a query
+    <h4>Watch out for the debugger changing the answer</h4>
+    <p>Hovering over a query
     variable enumerates it to show you the elements. On a query with side effects, or one over a
     network source, the act of inspecting it does the work — and the results pane can show values
     that the running program never produced. Inspect a materialised copy instead.</p>
   </div>
 
   <div class="callout callout--debug">
-    <p><strong>Before rewriting a pipeline as a loop, measure it.</strong> A 2.7× multiplier on a
+    <h4>Before rewriting a pipeline as a loop, measure it</h4>
+    <p>A 2.7× multiplier on a
     4.6-microsecond operation is not worth the readability. Time the pipeline over the real data
     size; if the whole thing is microseconds, the answer is to leave it alone.</p>
   </div>
@@ -1137,7 +1147,8 @@ foreach (var o in orders) Save(o);</code></pre>
   <h2>Why this matters in a real system</h2>
 
   <div class="callout callout--why">
-    <p><strong>A concrete case.</strong> An internal reporting endpoint built a candidate set of
+    <h4>A concrete case</h4>
+    <p>An internal reporting endpoint built a candidate set of
     records and passed it to a summariser that printed a count, a total and a maximum — the shape in
     "what goes wrong" above. For two years the caller passed a <code>List&lt;Order&gt;</code> and the
     endpoint responded in about 200 ms.</p>
@@ -1177,45 +1188,51 @@ foreach (var o in orders) Save(o);</code></pre>
   <h2>Misconceptions and anti-patterns</h2>
 
   <div class="callout callout--myth">
-    <p><strong>"LINQ allocates an object per element."</strong> The pipeline does not. Measured:
+    <h4>"LINQ allocates an object per element"</h4>
+    <p>The pipeline does not. Measured:
     <strong>144 bytes total</strong> for a three-operator pipeline over 200,000 elements. What
     allocates per element is a projection to a reference type — 6.4 MB for 200,000 anonymous
     types — and that is the shape you asked for, not overhead.</p>
   </div>
 
   <div class="callout callout--myth">
-    <p><strong>"Deferred means it runs once, later."</strong> It means it runs <em>every time</em>,
+    <h4>"Deferred means it runs once, later"</h4>
+    <p>It means it runs <em>every time</em>,
     later. Measured: 9,000 predicate calls for a 3,000-element source read three times.</p>
   </div>
 
   <div class="callout callout--myth">
-    <p><strong>"<code>Count()</code> is O(1) on a list."</strong> On something the runtime can see as
+    <h4>"<code>Count()</code> is O(1) on a list"</h4>
+    <p>On something the runtime can see as
     <code>ICollection&lt;T&gt;</code>, yes. Put one <code>Where</code> in front and it is O(n):
     measured at 34 ms against 1,765.7 ms over 100,000 calls, a 52× difference from adding a filter
     that matched everything.</p>
   </div>
 
   <div class="callout callout--myth">
-    <p><strong>"<code>OrderBy</code> is lazy, so <code>OrderBy(…).First()</code> is cheap."</strong>
-    It is deferred but it buffers. Measured: <code>Take(3)</code> after an <code>OrderBy</code>
+    <h4>"<code>OrderBy</code> is lazy, so <code>OrderBy(…).First()</code> is cheap"</h4>
+    <p>It is deferred but it buffers. Measured: <code>Take(3)</code> after an <code>OrderBy</code>
     pulled all 1,000,000 source elements. Use <code>MinBy</code> or <code>MaxBy</code>, which are one
     pass.</p>
   </div>
 
   <div class="callout callout--myth">
-    <p><strong>"A query captures the values it was written with."</strong> It captures the variables.
+    <h4>"A query captures the values it was written with"</h4>
+    <p>It captures the variables.
     Measured: one query variable, never reassigned, gave <code>4, 5, 6</code> and then
     <code>6</code> after a variable it mentions was changed.</p>
   </div>
 
   <div class="callout callout--myth">
-    <p><strong>"Rewrite the LINQ as loops for performance."</strong> Sometimes right, usually not.
+    <h4>"Rewrite the LINQ as loops for performance"</h4>
+    <p>Sometimes right, usually not.
     The multiplier is about 2.5× and the base is nanoseconds: the same pipeline over 100 elements
     took 4.6 microseconds. Measure the real data size before trading readability for it.</p>
   </div>
 
   <div class="callout callout--myth">
-    <p><strong>"Deferred execution works the same everywhere."</strong> Two different mechanisms
+    <h4>"Deferred execution works the same everywhere"</h4>
+    <p>Two different mechanisms
     share the word. <code>IEnumerable&lt;T&gt;</code> defers calling delegates;
     <code>IQueryable&lt;T&gt;</code> defers an expression tree a provider translates. Measured: the
     same lambda text became a <code>Func&lt;Order,bool&gt;</code> in one and the readable tree
@@ -1223,7 +1240,8 @@ foreach (var o in orders) Save(o);</code></pre>
   </div>
 
   <div class="callout callout--myth">
-    <p><strong>"Adding <code>ToList()</code> everywhere is the safe default."</strong> It costs an
+    <h4>"Adding <code>ToList()</code> everywhere is the safe default"</h4>
+    <p>It costs an
     allocation proportional to the data and throws away streaming — a filter over a million rows that
     fed a <code>Take(10)</code> now materialises a million. Materialise where a query is read more
     than once, crosses a resource boundary, or must snapshot a value. Not by reflex.</p>

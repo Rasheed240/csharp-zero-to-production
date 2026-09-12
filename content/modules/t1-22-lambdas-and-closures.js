@@ -309,7 +309,8 @@ class Program
   so each sees its own value.</p>
 
   <div class="callout callout--note">
-    <p><strong>This is a language change with a history worth knowing.</strong> Before C# 5,
+    <h4>This is a language change with a history worth knowing</h4>
+    <p>Before C# 5,
     <code>foreach</code> behaved like <code>for</code> — one shared variable, and
     <code>alpha, beta, gamma</code> would have printed <code>gamma, gamma, gamma</code>. It was
     changed because that behaviour was almost never what anyone wanted from a
@@ -508,7 +509,8 @@ sealed class Holder
   what it roots depends on one word in the lambda body.</p>
 
   <div class="callout callout--warn">
-    <p><strong>This is the third incident from the top of the module.</strong> A one-line callback
+    <h4>This is the third incident from the top of the module</h4>
+    <p>A one-line callback
     mentioning a single integer — <code>() =&gt; _pageSize</code> — captures <code>this</code>, and
     keeps the entire object alive for as long as the callback lives. If that object holds a 50 KB
     buffer, or a database connection, or a reference to a whole object graph, all of it stays. The
@@ -663,8 +665,8 @@ matches: 29,333 of 200,000
   loops</strong>, so the allocation happens at configuration time rather than per item.</p>
 
   <div class="callout callout--gotcha">
-    <p><strong>A LINQ query in a loop is this bug wearing different clothes.</strong>
-    <code>orders.Where(o =&gt; o.Region == region)</code> written inside a per-element loop creates
+    <h4>A LINQ query in a loop is this bug wearing different clothes</h4>
+    <p><code>orders.Where(o =&gt; o.Region == region)</code> written inside a per-element loop creates
     a closure per element exactly as the example does, plus the iterator objects LINQ itself needs.
     <a href="#/m/t1-25-deferred-execution">Deferred Execution and the Cost of LINQ</a> measures the
     whole picture; the closure is the part that belongs to this module.</p>
@@ -740,22 +742,25 @@ public Func&lt;int&gt; GetPageSizeAccessor()
   <h2>How to debug this class of problem</h2>
 
   <div class="callout callout--debug">
-    <p><strong>A type named <code>&lt;&gt;c__DisplayClass…</code> is high in an allocation
-    profile.</strong> That is a closure, and the number in the name identifies the method and scope
+    <h4>A type named <code>&lt;&gt;c__DisplayClass…</code> is high in an allocation
+    profile</h4>
+    <p>That is a closure, and the number in the name identifies the method and scope
     it came from — <code>&lt;&gt;c__DisplayClass7_0</code> is the first captured scope of the eighth
     lambda-containing method in that class. Most profilers show the declaring type, which narrows
     it to one file. Then look for a capturing lambda inside a loop or a per-item call.</p>
   </div>
 
   <div class="callout callout--debug">
-    <p><strong>Several callbacks that should differ all behave identically.</strong> Look for a
+    <h4>Several callbacks that should differ all behave identically</h4>
+    <p>Look for a
     <code>for</code> loop. Print the captured value at creation time and at invocation time — if
     creation shows <code>0, 1, 2</code> and invocation shows <code>3, 3, 3</code>, one variable is
     shared. The fix is a per-iteration copy; the diagnosis is that the two printouts disagree.</p>
   </div>
 
   <div class="callout callout--debug">
-    <p><strong>An object is retained and nothing appears to reference it.</strong> Check the
+    <h4>An object is retained and nothing appears to reference it</h4>
+    <p>Check the
     delegates that outlive it. <code>someDelegate.Target?.GetType().Name</code> tells you what the
     lambda actually captured: the type itself means <code>this</code> was captured;
     <code>&lt;&gt;c__DisplayClass…</code> means only locals were. In a memory dump, the retention
@@ -763,7 +768,8 @@ public Func&lt;int&gt; GetPageSizeAccessor()
   </div>
 
   <div class="callout callout--debug">
-    <p><strong>Proving a lifetime claim rather than arguing about it.</strong> Create the object in
+    <h4>Proving a lifetime claim rather than arguing about it</h4>
+    <p>Create the object in
     a method, take a <code>WeakReference</code> to it, let the method return, force
     <code>GC.Collect()</code> twice with a
     <code>WaitForPendingFinalizers</code> between, and read <code>IsAlive</code>. That is what this
@@ -771,7 +777,8 @@ public Func&lt;int&gt; GetPageSizeAccessor()
   </div>
 
   <div class="callout callout--debug">
-    <p><strong>Preventing the whole category while writing.</strong> Mark hot-path lambdas
+    <h4>Preventing the whole category while writing</h4>
+    <p>Mark hot-path lambdas
     <code>static</code>. If it compiles, nothing was captured and nothing is allocated per call. If
     it does not (<code>CS8820</code>), the error names exactly what you were capturing — which is
     the information you wanted anyway, delivered at compile time instead of in a profile.</p>
@@ -782,7 +789,8 @@ public Func&lt;int&gt; GetPageSizeAccessor()
   <h2>Why this matters in a real system</h2>
 
   <div class="callout callout--why">
-    <p><strong>A concrete case.</strong> A document-processing service held a
+    <h4>A concrete case</h4>
+    <p>A document-processing service held a
     <code>DocumentContext</code> per job: parsed content, a 40 MB rendered page buffer, and a
     handle to the source stream. Jobs completed in a few seconds and the context was expected to be
     collected immediately afterwards.</p>
@@ -823,7 +831,8 @@ public Func&lt;int&gt; GetPageSizeAccessor()
   <h2>Misconceptions and anti-patterns</h2>
 
   <div class="callout callout--myth">
-    <p><strong>"A lambda captures the value of the variable."</strong> It captures the
+    <h4>"A lambda captures the value of the variable"</h4>
+    <p>It captures the
     <em>variable</em>. The measurement shows a lambda returning 0, then 10 after an outside
     assignment, then 11 after another lambda incremented it. The variable moves onto a display
     class and everything that referred to it — including the enclosing method — now shares that
@@ -831,36 +840,40 @@ public Func&lt;int&gt; GetPageSizeAccessor()
   </div>
 
   <div class="callout callout--myth">
-    <p><strong>"<code>foreach</code> and <code>for</code> capture the same way."</strong>
-    Measured: <code>0, 1, 2</code> against <code>3, 3, 3</code>. <code>foreach</code> declares a
+    <h4>"<code>foreach</code> and <code>for</code> capture the same way"</h4>
+    <p>Measured: <code>0, 1, 2</code> against <code>3, 3, 3</code>. <code>foreach</code> declares a
     fresh variable per iteration (since C# 5); <code>for</code> declares one and mutates it. The
     difference was a deliberate language change, applied to <code>foreach</code> only because
     <code>for</code>'s variable is meant to be shared.</p>
   </div>
 
   <div class="callout callout--myth">
-    <p><strong>"Lambdas allocate."</strong> Only capturing ones, and only when created. A
+    <h4>"Lambdas allocate"</h4>
+    <p>Only capturing ones, and only when created. A
     non-capturing lambda is cached in a static field on <code>&lt;&gt;c</code> and allocates once
     for the life of the process — verified at zero bytes per thousand uses. So does a static method
     group conversion.</p>
   </div>
 
   <div class="callout callout--myth">
-    <p><strong>"Capturing two variables costs twice as much."</strong> It costs the same: one
+    <h4>"Capturing two variables costs twice as much"</h4>
+    <p>It costs the same: one
     display class per <em>scope</em>, with a field per variable, plus one delegate. The corollary is
     less comfortable — capturing one variable from a scope also keeps every other captured variable
     in that scope alive.</p>
   </div>
 
   <div class="callout callout--myth">
-    <p><strong>"Capturing a field captures the field."</strong> It captures <code>this</code>.
+    <h4>"Capturing a field captures the field"</h4>
+    <p>It captures <code>this</code>.
     Mentioning any instance member — a field, a property, a method — makes the whole enclosing
     object the delegate's target. Proven here with a weak reference: the object survived a full
     collection.</p>
   </div>
 
   <div class="callout callout--myth">
-    <p><strong>"Closure allocation is a micro-optimisation."</strong> Per request it is. Per
+    <h4>"Closure allocation is a micro-optimisation"</h4>
+    <p>Per request it is. Per
     element it was 24 MB for one pass over 200,000 items. And a captured <code>this</code> stored
     somewhere long-lived is not an allocation problem at all — it is a retention problem, which
     costs far more than the bytes.</p>

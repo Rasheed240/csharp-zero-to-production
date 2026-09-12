@@ -386,8 +386,9 @@ The members do exist, marked private and final in metadata:
   than to members.</p>
 
   <div class="callout callout--gotcha">
-    <p><strong>Explicit implementations are invisible to a debugger's member list and to
-    anything reflecting over public members.</strong> The metadata shows them as private and
+    <h4>Explicit implementations are invisible to a debugger's member list and to
+    anything reflecting over public members</h4>
+    <p>The metadata shows them as private and
     final, with names like <code>ILifecycle.Start</code> that are not legal C# identifiers. A
     serialiser walking public members will not see them; a mapping library configured by
     convention will not find them. That is usually the point, and it is occasionally an afternoon
@@ -694,7 +695,8 @@ The real diamond — one base member, two implementations:
   one.</p>
 
   <div class="callout callout--note">
-    <p><strong>This distinction is worth having got wrong once.</strong> The first draft of this
+    <h4>This distinction is worth having got wrong once</h4>
+    <p>The first draft of this
     section asserted that two interfaces sharing a method name produced <code>CS8705</code>. It
     does not — the probe compiled cleanly, which is how the error was caught. The intuition
     "same name, therefore conflict" is exactly the wrong model; C# resolves members by their
@@ -1134,8 +1136,8 @@ public interface IOrderService
   <h2>How to debug this class of problem</h2>
 
   <div class="callout callout--debug">
-    <p><strong><code>TypeLoadException</code> naming a method that is not in your source.</strong>
-    An interface your type implements gained a member, and the assembly you are running against is
+    <h4><code>TypeLoadException</code> naming a method that is not in your source</h4>
+    <p>An interface your type implements gained a member, and the assembly you are running against is
     newer than the one you compiled against. Read the message carefully: it names both the missing
     method and the assembly containing the type that is missing it, which tells you which side is
     stale. Confirm by printing assembly versions and locations at startup, as in
@@ -1145,7 +1147,8 @@ public interface IOrderService
   </div>
 
   <div class="callout callout--debug">
-    <p><strong><code>CS1061</code> for a method you can see in the interface.</strong> It is a
+    <h4><code>CS1061</code> for a method you can see in the interface</h4>
+    <p>It is a
     default interface method, and defaults live on the interface, not on the class. Cast to the
     interface, or declare the member on the class. Confirm in one line:
     <code>typeof(TheClass).GetMethod("TheMember")</code> returns <code>null</code> while
@@ -1153,7 +1156,8 @@ public interface IOrderService
   </div>
 
   <div class="callout callout--debug">
-    <p><strong>A member you implemented is not being found by a framework.</strong> Check whether
+    <h4>A member you implemented is not being found by a framework</h4>
+    <p>Check whether
     it is implemented explicitly. Explicit implementations are private and final in metadata with
     names like <code>ILifecycle.Start</code>, so anything enumerating public members — a
     serialiser, an object mapper, model binding — will not see it. Enumerate with
@@ -1162,7 +1166,8 @@ public interface IOrderService
   </div>
 
   <div class="callout callout--debug">
-    <p><strong><code>CS8705</code>, no most specific implementation.</strong> You have a genuine
+    <h4><code>CS8705</code>, no most specific implementation</h4>
+    <p>You have a genuine
     diamond: one interface member with two competing implementations in interfaces that are not
     related to each other. Do not go looking for two interfaces with the same method name — that
     is not a diamond and compiles fine. Look for a <em>base</em> interface whose member is
@@ -1171,7 +1176,8 @@ public interface IOrderService
   </div>
 
   <div class="callout callout--debug">
-    <p><strong>Deciding whether an interface is worth its cost.</strong> Count the implementations
+    <h4>Deciding whether an interface is worth its cost</h4>
+    <p>Count the implementations
     that are not test doubles. Zero means it is a mock-enabling wrapper and the versioning cost is
     buying little; one means it is a boundary, which may be enough; several means it is a genuine
     role. Then ask whether it is likely to gain members — if yes, a narrower interface, or an
@@ -1183,7 +1189,8 @@ public interface IOrderService
   <h2>Why this matters in a real system</h2>
 
   <div class="callout callout--why">
-    <p><strong>A concrete case.</strong> A platform team owned <code>IPaymentProvider</code>, a
+    <h4>A concrete case</h4>
+    <p>A platform team owned <code>IPaymentProvider</code>, a
     six-member interface implemented by 14 provider adapters across nine repositories, plus about
     40 test doubles. A regulatory change required every provider to expose a settlement reference.
     They added <code>string GetSettlementReference(string transactionId);</code> and published
@@ -1222,8 +1229,9 @@ public interface IOrderService
   <h2>Misconceptions and anti-patterns</h2>
 
   <div class="callout callout--myth">
-    <p><strong>"Interfaces are for contracts, abstract classes for shared code — that is the whole
-    difference."</strong> True as far as it goes, and it omits the part that actually decides
+    <h4>"Interfaces are for contracts, abstract classes for shared code — that is the whole
+    difference"</h4>
+    <p>True as far as it goes, and it omits the part that actually decides
     designs. Since C# 8 an interface can carry implementation, and since C# 11 it can require
     static members, so the capability gap has narrowed considerably. What has not changed is
     versioning: adding to an abstract class is safe, adding to a published interface breaks every
@@ -1231,23 +1239,24 @@ public interface IOrderService
   </div>
 
   <div class="callout callout--myth">
-    <p><strong>"Default interface methods make interfaces work like abstract classes."</strong>
-    They do not, in the one respect people expect. A default is a member of the interface, not of
+    <h4>"Default interface methods make interfaces work like abstract classes"</h4>
+    <p>They do not, in the one respect people expect. A default is a member of the interface, not of
     the class: <code>payment.AuditLine()</code> does not compile and
     <code>typeof(Payment).GetMethod("AuditLine")</code> is <code>null</code>. Defaults are a
     versioning tool for the interface's callers, not a code-sharing tool for its implementors.</p>
   </div>
 
   <div class="callout callout--myth">
-    <p><strong>"Two interfaces with the same method name cause the diamond problem."</strong>
-    Verified false: they are different members that share a spelling, and a class may implement
+    <h4>"Two interfaces with the same method name cause the diamond problem"</h4>
+    <p>Verified false: they are different members that share a spelling, and a class may implement
     both while declaring nothing. A real diamond needs one base member with two competing
     implementations in unrelated derived interfaces, which is <code>CS8705</code>. The wrong
     intuition matters because it sends you looking for the conflict in the wrong place.</p>
   </div>
 
   <div class="callout callout--myth">
-    <p><strong>"Every service class should have an interface."</strong> The cost is real — every
+    <h4>"Every service class should have an interface"</h4>
+    <p>The cost is real — every
     future addition becomes a breaking change — and the benefit is often only mockability. An
     interface earns its place at a genuine boundary, where there are several implementations, or
     where you want a seam between assemblies. Where the only other implementation will ever be a
@@ -1256,7 +1265,8 @@ public interface IOrderService
   </div>
 
   <div class="callout callout--myth">
-    <p><strong>"An abstract class with no abstract members is pointless."</strong> It is a fine way
+    <h4>"An abstract class with no abstract members is pointless"</h4>
+    <p>It is a fine way
     to say "this type is not useful on its own" — a base carrying only shared mechanism, where
     every subclass differs by configuration rather than behaviour. Marking it <code>abstract</code>
     is a compile-time statement that instantiating it is a mistake, which is cheaper than a comment
@@ -1264,7 +1274,8 @@ public interface IOrderService
   </div>
 
   <div class="callout callout--myth">
-    <p><strong>"Explicit implementation is only a naming trick."</strong> It changes the type's
+    <h4>"Explicit implementation is only a naming trick"</h4>
+    <p>It changes the type's
     public surface, which changes what serialisers, mappers, model binders and IntelliSense can
     see. That is a design decision with consequences well beyond the name, and it is the right one
     when a member exists for one caller — a host, a framework — rather than for everyone holding

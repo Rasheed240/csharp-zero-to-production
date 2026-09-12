@@ -438,8 +438,9 @@ class Program
   LINQ</a> measures the consequences.</p>
 
   <div class="callout callout--gotcha">
-    <p><strong><code>Single</code> versus <code>First</code> is a correctness decision, not a
-    preference.</strong> <code>First</code> takes whatever comes and is right when several matches
+    <h4><code>Single</code> versus <code>First</code> is a correctness decision, not a
+    preference</h4>
+    <p><code>First</code> takes whatever comes and is right when several matches
     are expected and any will do. <code>Single</code> <em>asserts</em> that exactly one exists and
     throws if not — which is what you want whenever the data model guarantees uniqueness, because
     the exception tells you the guarantee has broken. Reaching for <code>First</code> to avoid an
@@ -596,7 +597,8 @@ class Program
   in an operator query syntax cannot say.</p>
 
   <div class="callout callout--note">
-    <p><strong>The composite key works because of value equality.</strong> Grouping by
+    <h4>The composite key works because of value equality</h4>
+    <p>Grouping by
     <code>new { o.Region, o.Placed.Month }</code> relies on anonymous types having generated
     <code>Equals</code> and <code>GetHashCode</code> over their members — exactly the machinery in
     <a href="#/m/t1-15-structs-and-records">Structs, Records, readonly, and init</a> and
@@ -795,7 +797,8 @@ class Program
   <code>Ada, Ada, Grace</code> — Ada twice, and <strong>Linus not at all</strong>.</p>
 
   <div class="callout callout--gotcha">
-    <p><strong>The word <code>into</code> does two unrelated things.</strong> After
+    <h4>The word <code>into</code> does two unrelated things</h4>
+    <p>After
     <code>group … by</code> it is a query continuation. After <code>join … on … equals …</code> it
     changes the join's shape entirely. Reading <code>join x in ys on … into g</code> as "a join, with
     a name for the result" is the wrong reading, and it is the reading most people arrive at — the
@@ -816,7 +819,8 @@ class Program
   same trap as <code>FirstOrDefault</code> and does not announce itself at all.</p>
 
   <div class="callout callout--gotcha">
-    <p><strong>Rows dropped by a join are invisible.</strong> Order <code>O-4</code> referenced
+    <h4>Rows dropped by a join are invisible</h4>
+    <p>Order <code>O-4</code> referenced
     customer 9, which does not exist. It is absent from the inner join and from the left outer join,
     because a left join keyed on the customer side can only preserve customers. Nothing warns you:
     the report is missing a row and the totals are quietly short. Finding those rows is a
@@ -914,7 +918,8 @@ var rows = from c in customers
   <h2>How to debug this class of problem</h2>
 
   <div class="callout callout--debug">
-    <p><strong>A query returns the wrong row and there is no error.</strong> Suspect
+    <h4>A query returns the wrong row and there is no error</h4>
+    <p>Suspect
     <code>First</code> or <code>FirstOrDefault</code> where the data was assumed unique. Change it
     to <code>Single</code> temporarily and run against real data: if it throws, the assumption is
     broken and you have found the defect rather than the symptom. This is the cheapest possible
@@ -922,7 +927,8 @@ var rows = from c in customers
   </div>
 
   <div class="callout callout--debug">
-    <p><strong>A <code>GroupBy</code> produces one group per item.</strong> The key type has no
+    <h4>A <code>GroupBy</code> produces one group per item</h4>
+    <p>The key type has no
     value equality. Check it the way
     <a href="#/m/t1-16-equality-and-hashing">Equality, GetHashCode, and Comparers</a> prescribes:
     build two keys from identical inputs and compare them. Anonymous types and records pass;
@@ -930,15 +936,16 @@ var rows = from c in customers
   </div>
 
   <div class="callout callout--debug">
-    <p><strong>A value that should be absent behaves like real data.</strong>
-    <code>FirstOrDefault</code> on a struct sequence returns <code>default(T)</code>, not
+    <h4>A value that should be absent behaves like real data</h4>
+    <p><code>FirstOrDefault</code> on a struct sequence returns <code>default(T)</code>, not
     <code>null</code>. Compare against <code>default</code> rather than <code>null</code>, or
     restructure to <code>Any()</code> followed by <code>First()</code> so the absent case is
     explicit.</p>
   </div>
 
   <div class="callout callout--debug">
-    <p><strong>Reading an unfamiliar query.</strong> Work through the clause-to-method table above
+    <h4>Reading an unfamiliar query</h4>
+    <p>Work through the clause-to-method table above
     in order, because that is the order the operators actually run in. Query syntax reads
     top-to-bottom in source order, and so does the pipeline it lowers to — which is why the
     <code>select</code> at the bottom is the last thing to happen even though it is what the query
@@ -946,7 +953,8 @@ var rows = from c in customers
   </div>
 
   <div class="callout callout--debug">
-    <p><strong>Deciding whether a query is doing what you think.</strong> Materialise each stage
+    <h4>Deciding whether a query is doing what you think</h4>
+    <p>Materialise each stage
     into a <code>ToList()</code> temporarily and print the counts. A stage that unexpectedly yields
     zero or yields everything localises the fault in one run, and is faster than stepping through a
     lazy pipeline in a debugger — where stepping itself changes when the work happens.</p>
@@ -957,7 +965,8 @@ var rows = from c in customers
   <h2>Why this matters in a real system</h2>
 
   <div class="callout callout--why">
-    <p><strong>A concrete case.</strong> A billing service resolved a customer's active
+    <h4>A concrete case</h4>
+    <p>A billing service resolved a customer's active
     subscription with
     <code>subscriptions.First(s =&gt; s.CustomerId == id &amp;&amp; s.IsActive)</code>. The data
     model guaranteed one active subscription per customer, enforced by application logic at the
@@ -997,14 +1006,16 @@ var rows = from c in customers
   <h2>Misconceptions and anti-patterns</h2>
 
   <div class="callout callout--myth">
-    <p><strong>"Query syntax is slower than method syntax."</strong> They are the same program. The
+    <h4>"Query syntax is slower than method syntax"</h4>
+    <p>They are the same program. The
     measurement shows both forms producing the same runtime type,
     <code>IEnumerableSelectIterator</code>, because the compiler rewrites one into the other before
     any other stage of compilation. There is nothing left to be slower.</p>
   </div>
 
   <div class="callout callout--myth">
-    <p><strong>"Query syntax can do everything method syntax can."</strong> It has keywords for
+    <h4>"Query syntax can do everything method syntax can"</h4>
+    <p>It has keywords for
     about a dozen operators. <code>Count</code>, <code>Any</code>, <code>Sum</code>,
     <code>First</code>, <code>Skip</code>, <code>Take</code>, <code>Distinct</code> and most of the
     other forty have no keyword — a query needing one is parenthesised with a method call
@@ -1012,42 +1023,48 @@ var rows = from c in customers
   </div>
 
   <div class="callout callout--myth">
-    <p><strong>"<code>First</code> is the safe version of <code>Single</code>."</strong> It is the
+    <h4>"<code>First</code> is the safe version of <code>Single</code>"</h4>
+    <p>It is the
     version that does not tell you when your assumption is wrong. If the data guarantees one match,
     <code>Single</code> turns a broken guarantee into an immediate exception naming the problem;
     <code>First</code> silently returns an arbitrary row.</p>
   </div>
 
   <div class="callout callout--myth">
-    <p><strong>"<code>FirstOrDefault</code> returns null when nothing matches."</strong> For a
+    <h4>"<code>FirstOrDefault</code> returns null when nothing matches"</h4>
+    <p>For a
     reference type, yes. For a struct it returns <code>default(T)</code> — an all-zero value that no
     constructor produced and that a <code>null</code> check will not catch. Verified: the returned
     value compared equal to <code>default</code>.</p>
   </div>
 
   <div class="callout callout--myth">
-    <p><strong>"<code>let</code> is a variable declaration."</strong> It compiles to a
+    <h4>"<code>let</code> is a variable declaration"</h4>
+    <p>It compiles to a
     <code>Select</code> producing an anonymous type that carries the original item and the new value
     forward together. That is why a <code>let</code> is cheap to write and why the method-syntax
     equivalent needs an anonymous type you write yourself.</p>
   </div>
 
   <div class="callout callout--myth">
-    <p><strong>"<code>from … from …</code> and <code>join</code> are two ways of writing the same
-    thing."</strong> They produce the same rows and do very different amounts of work. Two
+    <h4>"<code>from … from …</code> and <code>join</code> are two ways of writing the same
+    thing"</h4>
+    <p>They produce the same rows and do very different amounts of work. Two
     <code>from</code> clauses lower to <code>SelectMany</code> and consider every pair;
     <code>join</code> builds a lookup on the key. Measured: 12 pairs considered against 3 results on
     a three-by-four data set, and the gap is quadratic.</p>
   </div>
 
   <div class="callout callout--myth">
-    <p><strong>"There is a left join operator."</strong> There is not. A left outer join is an
+    <h4>"There is a left join operator"</h4>
+    <p>There is not. A left outer join is an
     idiom — a group join followed by <code>DefaultIfEmpty()</code> — and the null it produces for
     unmatched outer elements is something the projection has to handle.</p>
   </div>
 
   <div class="callout callout--myth">
-    <p><strong>"Grouping by an anonymous type is a trick."</strong> It works for a documented
+    <h4>"Grouping by an anonymous type is a trick"</h4>
+    <p>It works for a documented
     reason: anonymous types get generated value equality over their members, so two keys with the
     same contents are equal and hash equally. The same reason explains its limit — a key containing
     a collection compares by reference and groups nothing.</p>

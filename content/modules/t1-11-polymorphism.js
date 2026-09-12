@@ -325,7 +325,8 @@ Unsafe.SizeOf&lt;Animal reference&gt;()   : 8 bytes (the reference, not the obje
   into the table it points at, jump there. Two memory reads and an indirect jump.</p>
 
   <div class="callout callout--warn">
-    <p><strong>That code is a demonstration, not a technique.</strong> The layout of an object
+    <h4>That code is a demonstration, not a technique</h4>
+    <p>The layout of an object
     header is an internal detail of CoreCLR, undocumented as a contract, and free to change between
     releases and across runtimes. It is shown here so "the vtable" is a thing you have seen rather
     than a word. Never read it in code you ship.</p>
@@ -363,7 +364,8 @@ Unsafe.SizeOf&lt;Animal reference&gt;()   : 8 bytes (the reference, not the obje
   distinction, not the <code>virtual</code> keyword, is what determines the cost.</p>
 
   <div class="callout callout--note">
-    <p><strong>A measurement note that changed this section's design.</strong> The first version of
+    <h4>A measurement note that changed this section's design</h4>
+    <p>The first version of
     this benchmark reported that a <code>sealed</code> class was <em>four times slower</em> than an
     ordinary one — an absurd result. The cause: two scenarios shared one loop method, so they
     shared one call site and therefore one type profile. The first scenario taught the JIT to
@@ -517,7 +519,8 @@ class Program
   what else each one does, and the production section puts a number on it.</p>
 
   <div class="callout callout--myth">
-    <p><strong>What this did not show.</strong> Marking the class <code>sealed</code> produced no
+    <h4>What this did not show</h4>
+    <p>Marking the class <code>sealed</code> produced no
     measurable improvement — 117 and 97 ms against 103 and 101 for the unsealed equivalent, which
     is noise. That is not because <code>sealed</code> does nothing; it is because dynamic PGO had
     already devirtualised the monomorphic call site, so there was nothing left for
@@ -982,7 +985,8 @@ static decimal Area(Shape s)
   <h2>How to debug this class of problem</h2>
 
   <div class="callout callout--debug">
-    <p><strong>The wrong implementation is running.</strong> First, print
+    <h4>The wrong implementation is running</h4>
+    <p>First, print
     <code>obj.GetType().Name</code> next to the result. If the runtime type is the derived one and
     the behaviour is the base one, it is hiding — the member is <code>new</code>, or has no
     modifier and produced a <code>CS0108</code> warning you have not seen. Confirm without reading
@@ -993,7 +997,8 @@ static decimal Area(Shape s)
   </div>
 
   <div class="callout callout--debug">
-    <p><strong>The right implementation runs from one call site and not another.</strong> Compare
+    <h4>The right implementation runs from one call site and not another</h4>
+    <p>Compare
     the <em>declared</em> types of the two references, not the objects. If they differ, you are
     almost certainly looking at overload resolution rather than dispatch: the compiler chose
     different members at the two sites. Hovering the call in an IDE shows the resolved signature;
@@ -1002,7 +1007,8 @@ static decimal Area(Shape s)
   </div>
 
   <div class="callout callout--debug">
-    <p><strong>A hot path got slower and nothing on it changed.</strong> Ask what new types were
+    <h4>A hot path got slower and nothing on it changed</h4>
+    <p>Ask what new types were
     introduced anywhere in the release, and whether any of them reach a call site on that path.
     Confirm before optimising: set <code>DOTNET_TieredPGO=0</code> in the environment and re-run.
     If the regression disappears — because the whole process is now uniformly slower and the
@@ -1012,7 +1018,8 @@ static decimal Area(Shape s)
   </div>
 
   <div class="callout callout--debug">
-    <p><strong>Establishing what dispatch actually costs you.</strong> Do not benchmark the call in
+    <h4>Establishing what dispatch actually costs you</h4>
+    <p>Do not benchmark the call in
     isolation and extrapolate — the measurement in this module shows an isolated virtual call at
     about 3.5 ns, which tells you nothing about whether it matters. Instead time the real operation
     (here, 366 ns per validation), multiply the call count by the measured per-call overhead, and
@@ -1021,7 +1028,8 @@ static decimal Area(Shape s)
   </div>
 
   <div class="callout callout--debug">
-    <p><strong>Benchmarking dispatch without fooling yourself.</strong> Give every scenario its own
+    <h4>Benchmarking dispatch without fooling yourself</h4>
+    <p>Give every scenario its own
     loop method, and run scenarios that differ in how many types they see in separate processes.
     Sharing a call site between two scenarios shares its type profile, so the second one measures
     guard failures — which is how this module's first benchmark "proved" that
@@ -1034,7 +1042,8 @@ static decimal Area(Shape s)
   <h2>Why this matters in a real system</h2>
 
   <div class="callout callout--why">
-    <p><strong>A concrete case.</strong> A message-processing service handled roughly 10 million
+    <h4>A concrete case</h4>
+    <p>A message-processing service handled roughly 10 million
     messages an hour — about 2,800 per second — through a pipeline whose innermost loop called an
     <code>IMessageHandler.Handle</code> per message, plus four <code>IEnrichment.Apply</code> calls
     per message. Five interface calls per message, 14,000 per second, all through interfaces with
@@ -1070,7 +1079,8 @@ static decimal Area(Shape s)
   <h2>Misconceptions and anti-patterns</h2>
 
   <div class="callout callout--myth">
-    <p><strong>"Virtual calls are slow."</strong> Measured here: with one type reaching the call
+    <h4>"Virtual calls are slow"</h4>
+    <p>Measured here: with one type reaching the call
     site, a virtual call is indistinguishable from a non-virtual one, because the JIT devirtualises
     and inlines it. The cost appears only when the site is polymorphic, and then it is about 2.5 ns
     per call. Whether 2.5 ns matters depends entirely on the call count — 3% of a validation, 100%
@@ -1078,7 +1088,8 @@ static decimal Area(Shape s)
   </div>
 
   <div class="callout callout--myth">
-    <p><strong>"Sealing everything makes it faster."</strong> This module measured no improvement
+    <h4>"Sealing everything makes it faster"</h4>
+    <p>This module measured no improvement
     from <code>sealed</code>, because dynamic PGO had already devirtualised the monomorphic case.
     <code>sealed</code> lets the JIT devirtualise <em>without</em> profiling, which matters for
     code that runs thousands rather than millions of times and for Native AOT. Seal for the design
@@ -1087,8 +1098,9 @@ static decimal Area(Shape s)
   </div>
 
   <div class="callout callout--myth">
-    <p><strong>"<code>new</code> is a way to override when the base member is not
-    virtual."</strong> It is a way to declare a different method with the same name. It does not
+    <h4>"<code>new</code> is a way to override when the base member is not
+    virtual"</h4>
+    <p>It is a way to declare a different method with the same name. It does not
     participate in dispatch, so base-class code and base-typed references keep getting the base
     implementation. If the base member is not <code>virtual</code> and you need polymorphic
     behaviour, the honest options are to change the base, or to stop inheriting and use
@@ -1096,7 +1108,8 @@ static decimal Area(Shape s)
   </div>
 
   <div class="callout callout--myth">
-    <p><strong>"Polymorphism means inheritance."</strong> Inheritance is one way to get it.
+    <h4>"Polymorphism means inheritance"</h4>
+    <p>Inheritance is one way to get it.
     Interfaces are another, and are usually the better one — covered next in
     <a href="#/m/t1-12-abstraction-and-interfaces">Abstraction, Abstract Classes, and
     Interfaces</a>. Generics give a third form, resolved at compile time with no dispatch cost at
@@ -1105,7 +1118,8 @@ static decimal Area(Shape s)
   </div>
 
   <div class="callout callout--myth">
-    <p><strong>"<code>GetType()</code> tells me which method will run."</strong> It tells you the
+    <h4>"<code>GetType()</code> tells me which method will run"</h4>
+    <p>It tells you the
     runtime type, which decides <em>virtual</em> dispatch only. It does not account for hiding,
     where a non-virtual member is chosen by the reference's static type, and it does not account
     for overload resolution, which happens before dispatch. The truck example has
@@ -1113,7 +1127,8 @@ static decimal Area(Shape s)
   </div>
 
   <div class="callout callout--myth">
-    <p><strong>"A virtual call is a dictionary lookup by name."</strong> It is an array index into
+    <h4>"A virtual call is a dictionary lookup by name"</h4>
+    <p>It is an array index into
     a fixed table, decided at compile time. The name is gone by then. Interface dispatch is more
     involved because a type's interface methods are not at a fixed offset in its own table, which
     is why interface calls measured 5–6× rather than 3.5× — but even that is a small number of

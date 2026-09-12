@@ -198,7 +198,8 @@ class Program
   It is the subject of most of this module's failure modes.</p>
 
   <div class="callout callout--gotcha">
-    <p><strong><code>const decimal</code> is not a real constant in metadata.</strong> The output
+    <h4><code>const decimal</code> is not a real constant in metadata</h4>
+    <p>The output
     above shows <code>Vat</code> with <code>IsLiteral=False</code> and
     <code>IsInitOnly=True</code> — the shape of a <code>static readonly</code> field. The CLR has
     no <code>decimal</code> literal form, so the compiler emits a field carrying a
@@ -286,7 +287,8 @@ public static class Config
   earlier.</p>
 
   <div class="callout callout--warn">
-    <p><strong>Where this sits among the failures met so far.</strong> This one is the quietest of
+    <h4>Where this sits among the failures met so far</h4>
+    <p>This one is the quietest of
     the family, and worth putting beside the others:</p>
     <div class="table-wrap">
     <table>
@@ -592,7 +594,8 @@ class Cyclic2
   nothing to do with the type.</p>
 
   <div class="callout callout--myth">
-    <p><strong>Block 3 corrects a widely repeated claim.</strong> Cyclic static initialisation is
+    <h4>Block 3 corrects a widely repeated claim</h4>
+    <p>Cyclic static initialisation is
     usually described as deadlocking. Measured on .NET 10, it did not — not single-threaded, and
     not with two threads forced into the initialisers simultaneously with a barrier. The runtime
     broke the cycle by returning the <strong>default value</strong> of the field whose initialiser
@@ -1054,8 +1057,8 @@ public static readonly IReadOnlyList&lt;string&gt; AllowedRegions =
   <h2>How to debug this class of problem</h2>
 
   <div class="callout callout--debug">
-    <p><strong>A configuration value is stale and the deployed library is correct.</strong>
-    Suspect a <code>const</code>. Confirm without guessing: run
+    <h4>A configuration value is stale and the deployed library is correct</h4>
+    <p>Suspect a <code>const</code>. Confirm without guessing: run
     <code>ildasm</code> or any IL viewer over the <em>consuming</em> assembly and look for the
     literal in the call site — a <code>const</code> read compiles to
     <code>ldc.i4.3</code> with no reference to the declaring type, while a
@@ -1065,7 +1068,8 @@ public static readonly IReadOnlyList&lt;string&gt; AllowedRegions =
   </div>
 
   <div class="callout callout--debug">
-    <p><strong>A test passes alone and fails in the suite.</strong> Assume static state until
+    <h4>A test passes alone and fails in the suite</h4>
+    <p>Assume static state until
     proved otherwise. Two quick checks: run the suite with parallelism disabled — if it passes,
     the state is shared across threads; and run the failing test after the one that precedes it in
     the suite, alone, which finds order dependence. Then grep the code under test for
@@ -1075,7 +1079,8 @@ public static readonly IReadOnlyList&lt;string&gt; AllowedRegions =
   </div>
 
   <div class="callout callout--debug">
-    <p><strong>A static field holds an implausible default.</strong> Zero, <code>null</code>, or
+    <h4>A static field holds an implausible default</h4>
+    <p>Zero, <code>null</code>, or
     an empty collection where the initialiser plainly assigns something else means the field was
     read <em>during</em> initialisation — a cycle. Find it by putting a breakpoint or a
     <code>Console.WriteLine</code> at the top of each suspect initialiser and reading the order
@@ -1083,7 +1088,8 @@ public static readonly IReadOnlyList&lt;string&gt; AllowedRegions =
   </div>
 
   <div class="callout callout--debug">
-    <p><strong>Startup stalls, or a request stalls for no visible reason.</strong> A type
+    <h4>Startup stalls, or a request stalls for no visible reason</h4>
+    <p>A type
     initialiser doing I/O blocks every thread that touches that type. Capture a dump during the
     stall and look for threads waiting on class initialisation — in WinDbg with SOS,
     <code>!threads</code> and <code>!clrstack</code> show them parked in the runtime's type
@@ -1093,15 +1099,17 @@ public static readonly IReadOnlyList&lt;string&gt; AllowedRegions =
   </div>
 
   <div class="callout callout--debug">
-    <p><strong><code>TypeInitializationException</code>, repeatedly, after the cause is
-    fixed.</strong> The type is poisoned for the life of the process — the runtime records that
+    <h4><code>TypeInitializationException</code>, repeatedly, after the cause is
+    fixed</h4>
+    <p>The type is poisoned for the life of the process — the runtime records that
     initialisation failed and does not retry. The inner exception is the real error and the only
     useful part of the message. Restarting is the only recovery, which is why anything that can
     fail belongs outside a type initialiser.</p>
   </div>
 
   <div class="callout callout--debug">
-    <p><strong>Deciding whether a static is safe.</strong> Two questions. <em>Is it ever
+    <h4>Deciding whether a static is safe</h4>
+    <p>Two questions. <em>Is it ever
     written after initialisation?</em> If yes, it is shared mutable state and needs to become an
     instance or be synchronised. <em>Does <code>readonly</code> actually freeze what matters?</em>
     A <code>static readonly List&lt;T&gt;</code> is a mutable global with a reassuring keyword on
@@ -1113,7 +1121,8 @@ public static readonly IReadOnlyList&lt;string&gt; AllowedRegions =
   <h2>Why this matters in a real system</h2>
 
   <div class="callout callout--why">
-    <p><strong>A concrete case.</strong> A payments platform raised its gateway retry limit from 3
+    <h4>A concrete case</h4>
+    <p>A payments platform raised its gateway retry limit from 3
     to 5 after an incident in which transient gateway failures had caused about 1,200 abandoned
     checkouts in an afternoon. The value lived in a shared <code>Constants</code> class as
     <code>public const int MaxGatewayRetries = 3;</code>. It was changed, the package was published
@@ -1149,15 +1158,17 @@ public static readonly IReadOnlyList&lt;string&gt; AllowedRegions =
   <h2>Misconceptions and anti-patterns</h2>
 
   <div class="callout callout--myth">
-    <p><strong>"<code>const</code> and <code>static readonly</code> are the same, one is only
-    shorter."</strong> Measured: after a library update, the <code>const</code> values were stale
+    <h4>"<code>const</code> and <code>static readonly</code> are the same, one is only
+    shorter"</h4>
+    <p>Measured: after a library update, the <code>const</code> values were stale
     and the <code>static readonly</code> values were current, in the same program, in the same
     run. <code>const</code> is copied into every consumer at their compile time;
     <code>static readonly</code> is read from the loaded assembly.</p>
   </div>
 
   <div class="callout callout--myth">
-    <p><strong>"An empty static constructor does nothing."</strong> It removes the
+    <h4>"An empty static constructor does nothing"</h4>
+    <p>It removes the
     <code>beforefieldinit</code> flag, which changes when initialisation happens. In the
     measurement above, the class with the empty static constructor initialised when a static
     <em>method</em> was called; the one without waited until a static <em>field</em> was read.
@@ -1165,7 +1176,8 @@ public static readonly IReadOnlyList&lt;string&gt; AllowedRegions =
   </div>
 
   <div class="callout callout--myth">
-    <p><strong>"Cyclic static constructors deadlock."</strong> Not on .NET 10, measured both
+    <h4>"Cyclic static constructors deadlock"</h4>
+    <p>Not on .NET 10, measured both
     single-threaded and with two threads forced in simultaneously. The runtime returned the
     default value of the not-yet-initialised field, producing a plausible wrong number with no
     error. The specification permits a deadlock; this runtime chose silence, which is harder to
@@ -1173,14 +1185,16 @@ public static readonly IReadOnlyList&lt;string&gt; AllowedRegions =
   </div>
 
   <div class="callout callout--myth">
-    <p><strong>"<code>static readonly</code> means the value cannot change."</strong> It means the
+    <h4>"<code>static readonly</code> means the value cannot change"</h4>
+    <p>It means the
     <em>field</em> cannot be reassigned. A <code>static readonly List&lt;T&gt;</code> can be added
     to, cleared and reordered by anyone, from any thread, for the life of the process — a mutable
     global with a reassuring keyword on it.</p>
   </div>
 
   <div class="callout callout--myth">
-    <p><strong>"<code>Lazy&lt;T&gt;</code> retries if initialisation fails."</strong> Only in one
+    <h4>"<code>Lazy&lt;T&gt;</code> retries if initialisation fails"</h4>
+    <p>Only in one
     mode. Measured: <code>ExecutionAndPublication</code> (the default when thread safety is on)
     and <code>None</code> both <em>cache the exception</em> and fail identically on every later
     read. Only <code>PublicationOnly</code> retries — and it allows the factory to run on more than
@@ -1189,7 +1203,8 @@ public static readonly IReadOnlyList&lt;string&gt; AllowedRegions =
   </div>
 
   <div class="callout callout--myth">
-    <p><strong>"A static class is a design smell."</strong> A static class of pure functions —
+    <h4>"A static class is a design smell"</h4>
+    <p>A static class of pure functions —
     <code>Math</code>, <code>string.Join</code>, your own formatting helpers — has no state, no
     lifetime, and nothing to isolate in a test. The hazard is static <em>state</em>, not static
     <em>methods</em>. If a static class has fields that change, that is the problem, and moving

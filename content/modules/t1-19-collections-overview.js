@@ -175,7 +175,8 @@ best of 3, times in milliseconds.
   and it happens somewhere in the low tens.</p>
 
   <div class="callout callout--note">
-    <p><strong>Two honest readings of that table.</strong> The hash columns getting slightly
+    <h4>Two honest readings of that table</h4>
+    <p>The hash columns getting slightly
     <em>faster</em> as n grows is measurement noise, not a real effect — they are flat, and at
     1–3 ms for 100,000 lookups the timer is near its limit. And <code>SortedSet</code>'s first two
     rows (15.5, 15.1 ms) are higher than its later ones because the delegate and comparer paths are
@@ -351,7 +352,8 @@ class Program
   costs.</p>
 
   <div class="callout callout--gotcha">
-    <p><strong><code>LinkedList</code> is almost never the answer.</strong> It has the property
+    <h4><code>LinkedList</code> is almost never the answer</h4>
+    <p>It has the property
     people reach for it for — inserting at the front is cheap — and it cost 48 bytes per element
     against <code>List</code>'s 4, and was 8× slower to fill than <code>List.Add</code>. Every
     element is a separate heap object holding two references, so iterating it chases pointers
@@ -685,7 +687,8 @@ entirely which collection each field is, chosen from how it is read.</code></pre
   scan-and-copy into a single lookup returning an existing list.</p>
 
   <div class="callout callout--note">
-    <p><strong>The trade being made.</strong> <code>FastCatalogue</code> holds three structures
+    <h4>The trade being made</h4>
+    <p><code>FastCatalogue</code> holds three structures
     over the same products instead of one, so it uses more memory and must be rebuilt when the
     catalogue changes. That is the right trade for data read thousands of times and written rarely,
     and the wrong one for data that changes constantly. The question is never "which collection is
@@ -747,14 +750,16 @@ public IReadOnlyList&lt;Product&gt; InCategory(string category) =&gt;
   <h2>How to debug this class of problem</h2>
 
   <div class="callout callout--debug">
-    <p><strong>An endpoint is slow and the profiler blames a collection method.</strong> Do not
+    <h4>An endpoint is slow and the profiler blames a collection method</h4>
+    <p>Do not
     optimise the method — check the shape. Run the same operation at two sizes an order of
     magnitude apart, as this module's tables do. Time that grows with the collection means a scan
     where a lookup belongs. Time that stays flat means the collection is not the problem.</p>
   </div>
 
   <div class="callout callout--debug">
-    <p><strong>Unexplained allocation with no <code>new</code> in the hot path.</strong> Look for
+    <h4>Unexplained allocation with no <code>new</code> in the hot path</h4>
+    <p>Look for
     LINQ that materialises: <code>ToList</code>, <code>ToArray</code>, <code>ToDictionary</code>,
     <code>GroupBy</code>, <code>OrderBy</code>. Each allocates a whole new collection per call.
     <code>GC.GetTotalAllocatedBytes(precise: true)</code> around the suspect block gives an exact
@@ -762,7 +767,8 @@ public IReadOnlyList&lt;Product&gt; InCategory(string category) =&gt;
   </div>
 
   <div class="callout callout--debug">
-    <p><strong>Filling a collection is slower than expected.</strong> Check for a capacity
+    <h4>Filling a collection is slower than expected</h4>
+    <p>Check for a capacity
     argument, and check where you are inserting. <code>Insert(0, ...)</code> and
     <code>RemoveAt(0)</code> are the two calls that turn a linear fill into a quadratic one, and
     they look no more expensive than <code>Add</code>. Search the file for
@@ -770,7 +776,8 @@ public IReadOnlyList&lt;Product&gt; InCategory(string category) =&gt;
   </div>
 
   <div class="callout callout--debug">
-    <p><strong>Output order changed and no ordering code did.</strong> Something is enumerating a
+    <h4>Output order changed and no ordering code did</h4>
+    <p>Something is enumerating a
     <code>Dictionary</code> or <code>HashSet</code>. The change usually coincides with a removal
     being introduced, or a runtime upgrade. Make the ordering explicit with
     <code>OrderBy</code> at the point of use, or change the type to one that guarantees order — do
@@ -778,7 +785,8 @@ public IReadOnlyList&lt;Product&gt; InCategory(string category) =&gt;
   </div>
 
   <div class="callout callout--debug">
-    <p><strong>Choosing a collection for code you are writing.</strong> Answer three questions
+    <h4>Choosing a collection for code you are writing</h4>
+    <p>Answer three questions
     before picking a type: how will this be looked up, will it be enumerated in a particular order,
     and roughly how large will it get. If the answer to the first is "by a key", the type is a
     dictionary or a set, whatever the data looks like. Getting this right when writing costs
@@ -790,7 +798,8 @@ public IReadOnlyList&lt;Product&gt; InCategory(string category) =&gt;
   <h2>Why this matters in a real system</h2>
 
   <div class="callout callout--why">
-    <p><strong>A concrete case.</strong> A pricing API held reference data in memory: about 50,000
+    <h4>A concrete case</h4>
+    <p>A pricing API held reference data in memory: about 50,000
     products, refreshed nightly, read on every request. It served roughly 1,200 requests a second
     at peak across eight instances. Each request looked up a product by SKU, checked a blocked-SKU
     list, and fetched the products in a category for an upsell panel — the three operations
@@ -828,21 +837,24 @@ public IReadOnlyList&lt;Product&gt; InCategory(string category) =&gt;
   <h2>Misconceptions and anti-patterns</h2>
 
   <div class="callout callout--myth">
-    <p><strong>"A Dictionary is always faster than a List."</strong> At ten items the list won —
+    <h4>"A Dictionary is always faster than a List"</h4>
+    <p>At ten items the list won —
     1.2 ms against 2.1. Hashing has a fixed cost that scanning a handful of elements does not
     reach. The dictionary's advantage is that its cost does not change; the list's is that its
     fixed cost is nearly zero. The crossover is in the low tens.</p>
   </div>
 
   <div class="callout callout--myth">
-    <p><strong>"LINQ is slow."</strong> LINQ is a thin layer; what costs is what it is asked to do
+    <h4>"LINQ is slow"</h4>
+    <p>LINQ is a thin layer; what costs is what it is asked to do
     over what. <code>Where(...).FirstOrDefault(...)</code> over a list is a scan and would be a
     scan written by hand. The measured 1.05 GB came from <code>ToList()</code> materialising a new
     collection per call, not from LINQ being LINQ.</p>
   </div>
 
   <div class="callout callout--myth">
-    <p><strong>"LinkedList is good for frequent insertions."</strong> Measured at 48 bytes per
+    <h4>"LinkedList is good for frequent insertions"</h4>
+    <p>Measured at 48 bytes per
     element against 4, 8× slower to fill than <code>List.Add</code>, and slower to iterate. Its
     advantage needs a node reference you already hold; if you are searching for the position first,
     you have paid a scan and gained nothing. <code>Queue&lt;T&gt;</code> and
@@ -850,19 +862,22 @@ public IReadOnlyList&lt;Product&gt; InCategory(string category) =&gt;
   </div>
 
   <div class="callout callout--myth">
-    <p><strong>"Dictionary preserves insertion order."</strong> It appeared to for five inserts and
+    <h4>"Dictionary preserves insertion order"</h4>
+    <p>It appeared to for five inserts and
     then did not: after one removal, a new key took the freed slot in the middle. There is no
     guarantee, it varies with edit history, and it can change between runtime versions.</p>
   </div>
 
   <div class="callout callout--myth">
-    <p><strong>"Pre-sizing is a micro-optimisation."</strong> It halved the fill time and removed
+    <h4>"Pre-sizing is a micro-optimisation"</h4>
+    <p>It halved the fill time and removed
     60% of the allocation for a 100,000-item list, and two thirds for a dictionary. It costs one
     constructor argument when the size is already known, which it usually is.</p>
   </div>
 
   <div class="callout callout--myth">
-    <p><strong>"SortedDictionary is a Dictionary that keeps order."</strong> It is a different data
+    <h4>"SortedDictionary is a Dictionary that keeps order"</h4>
+    <p>It is a different data
     structure — a balanced tree, not a hash table. Lookups are logarithmic rather than constant,
     insertion is about 10× slower, and iteration allocates. Use it when you need range queries or
     sorted traversal, not when you want a dictionary that enumerates tidily.</p>

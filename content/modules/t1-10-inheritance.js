@@ -407,7 +407,8 @@ this(...) delegates to the other constructor FIRST:
   directions, and the turn happens at <code>object</code>.</p>
 
   <div class="callout callout--gotcha">
-    <p><strong>The consequence that catches people.</strong> A base constructor that calls a
+    <h4>The consequence that catches people</h4>
+    <p>A base constructor that calls a
     <code>virtual</code> method reaches the derived override — and at that moment the derived
     class's <em>field initialisers have run</em> but its <em>constructor body has not</em>. So
     some of the derived object is initialised and some is not, and which is which depends on
@@ -741,7 +742,8 @@ agree?         : False</code></pre>
   library's code is unchanged in behaviour and correct by every reading of it.</p>
 
   <div class="callout callout--warn">
-    <p><strong>And recompiling does not fix it.</strong> A full clean rebuild of the application
+    <h4>And recompiling does not fix it</h4>
+    <p>A full clean rebuild of the application
     against v2 produces exactly the same result: <code>audit recorded : 0</code>. This is the
     difference between this failure and the one in
     <a href="#/m/t1-09-encapsulation">Encapsulation and Access Modifiers</a>, where turning a
@@ -763,7 +765,8 @@ agree?         : False</code></pre>
   group whose dependency on you is invisible from your own code.</p>
 
   <div class="callout callout--why">
-    <p><strong>Why this matters in a real system.</strong> This is not a hypothetical taxonomy of
+    <h4>Why this matters in a real system</h4>
+    <p>This is not a hypothetical taxonomy of
     risk; it is the reason a specific, famous design choice exists. Java's
     <code>HashSet.addAll</code> was implemented as a loop over <code>add</code>, and a widely
     circulated example showed a counting subclass reporting double. Every later collection
@@ -1194,7 +1197,8 @@ class ReportGenerator : DatabaseConnection
   <h2>How to debug this class of problem</h2>
 
   <div class="callout callout--debug">
-    <p><strong>Behaviour changed and no code in your repository did.</strong> Suspect a base class
+    <h4>Behaviour changed and no code in your repository did</h4>
+    <p>Suspect a base class
     in a dependency before you suspect your own logic. Diff the dependency's version between the
     last known-good deployment and now, and read the base class of every type you derive from —
     specifically, look for methods that used to call an overridable member and no longer do, or
@@ -1203,7 +1207,8 @@ class ReportGenerator : DatabaseConnection
   </div>
 
   <div class="callout callout--debug">
-    <p><strong>An override is not being called.</strong> Three candidates, in order of how often
+    <h4>An override is not being called</h4>
+    <p>Three candidates, in order of how often
     they are the answer. First, the member is hidden rather than overridden — check for
     <code>CS0108</code> in the build log, and check whether your method actually says
     <code>override</code>. Second, the base is not calling it: put a breakpoint in the base method
@@ -1214,7 +1219,8 @@ class ReportGenerator : DatabaseConnection
   </div>
 
   <div class="callout callout--debug">
-    <p><strong>A method is called more or fewer times than expected.</strong> Add a counter to the
+    <h4>A method is called more or fewer times than expected</h4>
+    <p>Add a counter to the
     override and print it, as this module's examples do. The count tells you the shape of the
     problem immediately: double the expected number means the base is routing another method
     through yours as well; zero means the base stopped routing through it. Both are behavioural
@@ -1222,7 +1228,8 @@ class ReportGenerator : DatabaseConnection
   </div>
 
   <div class="callout callout--debug">
-    <p><strong>An invariant on a base class is false.</strong> List every <code>protected</code>
+    <h4>An invariant on a base class is false</h4>
+    <p>List every <code>protected</code>
     member. Each one is a way a subclass can change state without the base class's methods
     running. Then search the solution for types deriving from it — in Visual Studio, "View Class
     Diagram" or Find All References on the type name; from the command line, a grep for
@@ -1231,7 +1238,8 @@ class ReportGenerator : DatabaseConnection
   </div>
 
   <div class="callout callout--debug">
-    <p><strong>Reading an unfamiliar hierarchy.</strong> Start at the leaf and walk up, listing
+    <h4>Reading an unfamiliar hierarchy</h4>
+    <p>Start at the leaf and walk up, listing
     for each level: what it overrides, what state it adds, and what it calls on
     <code>base</code>. Then walk down again asking one question per level — <em>does this class
     call any of its own virtual members?</em> Every "yes" is a behavioural contract that the
@@ -1243,7 +1251,8 @@ class ReportGenerator : DatabaseConnection
   <h2>Why this matters in a real system</h2>
 
   <div class="callout callout--why">
-    <p><strong>The incident from the top of this module, in full.</strong> A payments service
+    <h4>The incident from the top of this module, in full</h4>
+    <p>A payments service
     derived a class from a shared internal library's <code>ItemBag</code>-style collection,
     overriding only the single method the library's own guidance named. The override incremented
     a counter and wrote a compliance record. This ran correctly for two years.</p>
@@ -1281,7 +1290,8 @@ class ReportGenerator : DatabaseConnection
   <h2>Misconceptions and anti-patterns</h2>
 
   <div class="callout callout--myth">
-    <p><strong>"Inheritance is for code reuse."</strong> It is a way to get reuse, and the most
+    <h4>"Inheritance is for code reuse"</h4>
+    <p>It is a way to get reuse, and the most
     expensive one available, because it also creates substitutability obligations and a
     behavioural contract. If reuse is all you want, hold an instance as a field and call it —
     that couples you to the other class's public surface only, which is the part it has actually
@@ -1290,7 +1300,8 @@ class ReportGenerator : DatabaseConnection
   </div>
 
   <div class="callout callout--myth">
-    <p><strong>"A subclass can only make things better, so inheritance is safe."</strong> A
+    <h4>"A subclass can only make things better, so inheritance is safe"</h4>
+    <p>A
     subclass can break an invariant its base guarantees, as the ledger example does in three
     lines; can be called by base code at a moment when it is half-constructed; and can be
     silently disconnected by an implementation change in the base. Deriving is not a read-only
@@ -1298,15 +1309,17 @@ class ReportGenerator : DatabaseConnection
   </div>
 
   <div class="callout callout--myth">
-    <p><strong>"<code>protected</code> is the safe middle ground between private and
-    public."</strong> For <em>methods</em> that is roughly fair. For <em>fields</em> it is not:
+    <h4>"<code>protected</code> is the safe middle ground between private and
+    public"</h4>
+    <p>For <em>methods</em> that is roughly fair. For <em>fields</em> it is not:
     a protected field is public to an unbounded set of authors, and the base class loses the
     ability to enforce anything about it. Prefer a private field with a protected method, so
     there is still a line of code you control between a subclass and your state.</p>
   </div>
 
   <div class="callout callout--myth">
-    <p><strong>"If it compiles, the override is wired up."</strong> <code>CS0108</code> is a
+    <h4>"If it compiles, the override is wired up"</h4>
+    <p><code>CS0108</code> is a
     warning. A derived method that hides rather than overrides compiles, runs, and produces
     different answers through different references to the same object. Turn warnings into errors
     for this one if you can — treating <code>CS0108</code> as an error costs nothing and removes
@@ -1314,8 +1327,8 @@ class ReportGenerator : DatabaseConnection
   </div>
 
   <div class="callout callout--myth">
-    <p><strong>"Sealing classes is premature restriction — leave them open in case."</strong>
-    This is the same asymmetry as the access modifiers in
+    <h4>"Sealing classes is premature restriction — leave them open in case"</h4>
+    <p>This is the same asymmetry as the access modifiers in
     <a href="#/m/t1-09-encapsulation">Encapsulation and Access Modifiers</a>. Unsealing later is
     free and breaks nobody. Sealing later breaks every subclass that already exists, so in
     practice it never happens. The .NET libraries seal aggressively for exactly this reason, and
@@ -1324,7 +1337,8 @@ class ReportGenerator : DatabaseConnection
   </div>
 
   <div class="callout callout--myth">
-    <p><strong>"The base class and the derived class can be reviewed independently."</strong> The
+    <h4>"The base class and the derived class can be reviewed independently"</h4>
+    <p>The
     fragile base class demonstration is two files, each of which passes review on its own. The
     defect exists only in the relationship. When a base class calls its own overridable members,
     the unit that has to be reviewed as a whole is the hierarchy, not the file.</p>

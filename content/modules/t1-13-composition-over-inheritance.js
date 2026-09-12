@@ -510,7 +510,8 @@ The combination the hierarchy could not express, at no extra cost:
   cannot be called by it.</p>
 
   <div class="callout callout--note">
-    <p><strong>The last two output lines are the point of the whole refactor.</strong> A titled,
+    <h4>The last two output lines are the point of the whole refactor</h4>
+    <p>A titled,
     filtered TSV report and a plain TSV report existed the moment the pieces did. In the hierarchy
     they would have required duplicating <code>FilteredCsvReport</code> and
     <code>TitledFilteredCsvReport</code> for TSV — two more classes, containing copies of code that
@@ -764,8 +765,8 @@ class Program
   only starts costing when you actually stack layers, and then it costs per layer.</p>
 
   <div class="callout callout--note">
-    <p><strong>The control row is anomalous, and reporting it is more useful than hiding it.</strong>
-    A loop with <em>no call at all</em> measured consistently <em>slower</em> (1.16 ns) than the
+    <h4>The control row is anomalous, and reporting it is more useful than hiding it</h4>
+    <p>A loop with <em>no call at all</em> measured consistently <em>slower</em> (1.16 ns) than the
     same loop with one inlined virtual call (0.75 ns), across all three samples. That cannot be a
     real cost of not calling a method; it is a codegen difference between two loop bodies at a
     scale where 20 ns per 50 million iterations shows up. The lesson for reading any benchmark
@@ -1047,7 +1048,8 @@ audit entries, audit outside : 2</code></pre>
   <h2>How to debug this class of problem</h2>
 
   <div class="callout callout--debug">
-    <p><strong>A capability stopped being detected.</strong> Symptom: a fast path silently stopped
+    <h4>A capability stopped being detected</h4>
+    <p>Symptom: a fast path silently stopped
     being taken, or a feature quietly turned itself off. Something in the chain is wrapped. Print
     the actual chain rather than guessing — give each decorator a <code>ToString()</code> that
     includes its inner object, or walk the graph with reflection over the private
@@ -1057,14 +1059,16 @@ audit entries, audit outside : 2</code></pre>
   </div>
 
   <div class="callout callout--debug">
-    <p><strong>Logs stopped identifying which implementation ran.</strong> You are logging
+    <h4>Logs stopped identifying which implementation ran</h4>
+    <p>You are logging
     <code>GetType().Name</code> on a decorated object. Give the interface a <code>Name</code>
     property that decorators forward — as <code>Logging</code> does above — and log that instead.
     It is one member of boilerplate and it survives any amount of wrapping.</p>
   </div>
 
   <div class="callout callout--debug">
-    <p><strong>Behaviour differs between environments and the code is identical.</strong> Compare
+    <h4>Behaviour differs between environments and the code is identical</h4>
+    <p>Compare
     the composition roots, not the classes. The order layers are stacked in is usually assembled
     from configuration, so two environments can build genuinely different objects from the same
     binary. Log the assembled chain at startup — one line per service naming the layers in order —
@@ -1072,14 +1076,16 @@ audit entries, audit outside : 2</code></pre>
   </div>
 
   <div class="callout callout--debug">
-    <p><strong>A stack trace is mostly forwarding frames.</strong> Read it from the top: the first
+    <h4>A stack trace is mostly forwarding frames</h4>
+    <p>Read it from the top: the first
     frame that is not a one-line forward is where the work happened. If wrappers dominate,
     that is a signal about depth as well as a nuisance — eight layers means eight places a request
     can be modified, and no single file describes the path.</p>
   </div>
 
   <div class="callout callout--debug">
-    <p><strong>Deciding whether a hierarchy should become composition.</strong> Count the axes of
+    <h4>Deciding whether a hierarchy should become composition</h4>
+    <p>Count the axes of
     variation. If subclass names contain conjunctions — <code>RetryingEncryptedEmailSender</code>,
     <code>TitledFilteredCsvReport</code> — each conjunction is an axis, and the class count is
     already 2<sup>n</sup>. That naming pattern is the most reliable signal available, and it is
@@ -1322,7 +1328,8 @@ audit:
   <h2>Why this matters in a real system</h2>
 
   <div class="callout callout--why">
-    <p><strong>A concrete case.</strong> A billing service processed roughly 400,000 charge
+    <h4>A concrete case</h4>
+    <p>A billing service processed roughly 400,000 charge
     requests a day through a hierarchy that had reached five levels:
     <code>ChargeProcessor</code> → <code>RetryingChargeProcessor</code> →
     <code>AuditedRetryingChargeProcessor</code> → <code>IdempotentAuditedRetryingChargeProcessor</code>
@@ -1359,7 +1366,8 @@ audit:
   <h2>Misconceptions and anti-patterns</h2>
 
   <div class="callout callout--myth">
-    <p><strong>"Prefer composition over inheritance means never use inheritance."</strong> The
+    <h4>"Prefer composition over inheritance means never use inheritance"</h4>
+    <p>The
     template method in <a href="#/m/t1-10-inheritance">Inheritance</a> — a non-virtual public
     method owning an algorithm with one abstract hook — is inheritance doing something composition
     does more clumsily, and it makes a guarantee composition cannot: the steps cannot be reordered
@@ -1368,35 +1376,40 @@ audit:
   </div>
 
   <div class="callout callout--myth">
-    <p><strong>"Composition is slower because of the extra indirection."</strong> Measured: 2.5 ns
+    <h4>"Composition is slower because of the extra indirection"</h4>
+    <p>Measured: 2.5 ns
     per layer, and zero for a single unwrapped implementation because the JIT inlines it. Eight
     layers at a thousand requests a second is 23 microseconds a second. The question is never
     whether indirection costs something; it is how many times per second you pay it.</p>
   </div>
 
   <div class="callout callout--myth">
-    <p><strong>"Wrapping is transparent to callers."</strong> Three ways it is not, all
+    <h4>"Wrapping is transparent to callers"</h4>
+    <p>Three ways it is not, all
     demonstrated above: optional interfaces stop being detected, reference identity changes, and
     <code>GetType()</code> reports the wrapper. Frameworks that check capabilities with type tests
     — which is most of them — see the outermost layer only.</p>
   </div>
 
   <div class="callout callout--myth">
-    <p><strong>"Once it is composed, the design is finished."</strong> The order layers are stacked
+    <h4>"Once it is composed, the design is finished"</h4>
+    <p>The order layers are stacked
     in is a design decision with no representation in any type, and it can differ between
     environments assembled from configuration. Log the chain, and assert it in a test, or you have
     moved a compile-time property into an untested one.</p>
   </div>
 
   <div class="callout callout--myth">
-    <p><strong>"Injecting more dependencies makes a class more flexible."</strong> Past about four
+    <h4>"Injecting more dependencies makes a class more flexible"</h4>
+    <p>Past about four
     it makes the class harder to understand than the hierarchy it replaced. A twelve-parameter
     constructor is a signal that the class has too many responsibilities, and the fix is to split
     the class rather than to keep composing.</p>
   </div>
 
   <div class="callout callout--myth">
-    <p><strong>"Composition avoids the fragile base class problem entirely."</strong> It removes
+    <h4>"Composition avoids the fragile base class problem entirely"</h4>
+    <p>It removes
     the inheritance form of it. The same shape returns as layer ordering, and as default interface
     methods written in terms of other members — see exercise 4 of
     <a href="#/m/t1-12-abstraction-and-interfaces">Abstraction, Abstract Classes, and

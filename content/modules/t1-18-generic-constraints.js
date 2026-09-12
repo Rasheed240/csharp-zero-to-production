@@ -220,7 +220,8 @@ class Program
   is recognisable.</p>
 
   <div class="callout callout--gotcha">
-    <p><strong><code>T?</code> means two different things.</strong> Under
+    <h4><code>T?</code> means two different things</h4>
+    <p>Under
     <code>where T : struct</code> it is <code>Nullable&lt;T&gt;</code> — a real, distinct runtime
     type, as <code>typeof(int?)</code> printing <code>Nullable&#96;1</code> shows. Under
     <code>where T : class</code> it is a nullable <em>annotation</em> on the same type;
@@ -593,7 +594,8 @@ class Program
   you assume it exists.</p>
 
   <div class="callout callout--gotcha">
-    <p><strong><code>Blank()</code> returned <code>':(0)'</code>.</strong> A <code>new()</code>
+    <h4><code>Blank()</code> returned <code>':(0)'</code></h4>
+    <p>A <code>new()</code>
     constraint gives you a default-constructed instance, which for this type means empty strings
     and a zero age — an object that <code>Validate</code> would reject. That is the same warning as
     <code>default(T)</code> in
@@ -679,7 +681,8 @@ public static string Describe&lt;T&gt;(T entity) where T : IEntity =&gt; entity.
   <h2>How to debug this class of problem</h2>
 
   <div class="callout callout--debug">
-    <p><strong>The body will not compile and every real caller would work.</strong> That is the
+    <h4>The body will not compile and every real caller would work</h4>
+    <p>That is the
     correct behaviour: the method is compiled once for all possible <code>T</code>. Read the error
     to find the missing capability — <code>CS1061</code> means a member, <code>CS0304</code> means
     construction, <code>CS0019</code> means an operator — and add the narrowest constraint that
@@ -688,7 +691,8 @@ public static string Describe&lt;T&gt;(T entity) where T : IEntity =&gt; entity.
   </div>
 
   <div class="callout callout--debug">
-    <p><strong>A caller cannot satisfy your constraint.</strong> <code>CS0310</code> and
+    <h4>A caller cannot satisfy your constraint</h4>
+    <p><code>CS0310</code> and
     <code>CS0315</code> name the type argument and the constraint it failed. Before adding a
     parameterless constructor or an interface to their type, check whether the body actually needs
     that constraint — over-constraining is the more common cause. Delete each constraint in turn and
@@ -696,7 +700,8 @@ public static string Describe&lt;T&gt;(T entity) where T : IEntity =&gt; entity.
   </div>
 
   <div class="callout callout--debug">
-    <p><strong>Unexplained allocation in a generic method taking an interface.</strong> If the
+    <h4>Unexplained allocation in a generic method taking an interface</h4>
+    <p>If the
     argument is a struct it is being boxed on every call — 24 bytes, invisible in the source.
     Confirm with <code>GC.GetTotalAllocatedBytes(precise: true)</code> around a single call, as
     this module does. The fix is to take <code>T</code> with
@@ -704,8 +709,8 @@ public static string Describe&lt;T&gt;(T entity) where T : IEntity =&gt; entity.
   </div>
 
   <div class="callout callout--debug">
-    <p><strong>Object creation is slower than expected in a generic factory.</strong>
-    <code>new T()</code> under a <code>new()</code> constraint is not a plain constructor call —
+    <h4>Object creation is slower than expected in a generic factory</h4>
+    <p><code>new T()</code> under a <code>new()</code> constraint is not a plain constructor call —
     measured at about the same cost as <code>Activator.CreateInstance</code>, and 40% slower than a
     <code>Func&lt;T&gt;</code>. If the profile shows time in
     <code>Activator</code> or <code>RuntimeType.CreateInstance</code> for code that never mentions
@@ -713,7 +718,8 @@ public static string Describe&lt;T&gt;(T entity) where T : IEntity =&gt; entity.
   </div>
 
   <div class="callout callout--debug">
-    <p><strong>Reading an unfamiliar generic signature.</strong> The <code>where</code> clauses are
+    <h4>Reading an unfamiliar generic signature</h4>
+    <p>The <code>where</code> clauses are
     the complete list of what the body may assume, so they are the fastest summary of what the
     method does. Match each constraint to the line that uses it; any constraint you cannot match is
     either dead weight or a clue that the body does something you have not spotted.</p>
@@ -724,7 +730,8 @@ public static string Describe&lt;T&gt;(T entity) where T : IEntity =&gt; entity.
   <h2>Why this matters in a real system</h2>
 
   <div class="callout callout--why">
-    <p><strong>A concrete case.</strong> A geometry service processed roughly 1.2 million shape
+    <h4>A concrete case</h4>
+    <p>A geometry service processed roughly 1.2 million shape
     records per batch, computing areas through a generic pipeline. The shapes were
     <code>readonly struct</code> types — deliberately, to avoid allocation — and the pipeline stage
     was declared <code>double Total(IEnumerable&lt;IShape&gt; shapes)</code>.</p>
@@ -762,34 +769,39 @@ public static string Describe&lt;T&gt;(T entity) where T : IEntity =&gt; entity.
   <h2>Misconceptions and anti-patterns</h2>
 
   <div class="callout callout--myth">
-    <p><strong>"More constraints means safer code."</strong> A constraint is a requirement on every
+    <h4>"More constraints means safer code"</h4>
+    <p>A constraint is a requirement on every
     caller, present and future. One the body does not use excludes valid callers for nothing, and
     tightening a published constraint later breaks them. Constrain to exactly what the body
     uses.</p>
   </div>
 
   <div class="callout callout--myth">
-    <p><strong>"<code>new()</code> is the fast way to create a <code>T</code>."</strong> Measured at
+    <h4>"<code>new()</code> is the fast way to create a <code>T</code>"</h4>
+    <p>Measured at
     about the same cost as <code>Activator.CreateInstance</code> — roughly what it compiles to for
     a reference type argument — and about 40% slower than a <code>Func&lt;T&gt;</code> factory
     parameter, which can also pass constructor arguments.</p>
   </div>
 
   <div class="callout callout--myth">
-    <p><strong>"The struct constraint is a performance optimisation."</strong> It is an
+    <h4>"The struct constraint is a performance optimisation"</h4>
+    <p>It is an
     <em>allocation</em> optimisation. The measured timings were 2.67 ns boxed against 2.49
     constrained, an unstable difference; the allocation was 24 bytes against zero, exactly
     reproducible. Quote the bytes.</p>
   </div>
 
   <div class="callout callout--myth">
-    <p><strong>"<code>where T : notnull</code> prevents nulls."</strong> It produces
+    <h4>"<code>where T : notnull</code> prevents nulls"</h4>
+    <p>It produces
     <code>CS8714</code>, a <strong>warning</strong>, and only when the nullable context is enabled.
     It documents intent and helps analysis; it is not a runtime guarantee.</p>
   </div>
 
   <div class="callout callout--myth">
-    <p><strong>"<code>T?</code> means the same thing everywhere."</strong> Under
+    <h4>"<code>T?</code> means the same thing everywhere"</h4>
+    <p>Under
     <code>where T : struct</code> it is <code>Nullable&lt;T&gt;</code>, a real distinct type you can
     write <code>typeof</code> for. Under <code>where T : class</code> it is an annotation on the
     same type, and <code>typeof(string?)</code> does not compile. One piece of syntax, two
@@ -797,7 +809,8 @@ public static string Describe&lt;T&gt;(T entity) where T : IEntity =&gt; entity.
   </div>
 
   <div class="callout callout--myth">
-    <p><strong>"You cannot write generic arithmetic in C#."</strong> True until C# 11, and the
+    <h4>"You cannot write generic arithmetic in C#"</h4>
+    <p>True until C# 11, and the
     reason the base class library has an overload per numeric type.
     <code>where T : INumber&lt;T&gt;</code> now grants the operators through
     <code>static abstract</code> members, and the JIT still specialises per value type — so it is

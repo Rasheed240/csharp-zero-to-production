@@ -213,7 +213,8 @@ class Program
   ns per element against 0.83, because every read is an unbox.</p>
 
   <div class="callout callout--gotcha">
-    <p><strong>Generic does not mean unboxed.</strong> A <code>List&lt;object&gt;</code> is a
+    <h4>Generic does not mean unboxed</h4>
+    <p>A <code>List&lt;object&gt;</code> is a
     generic type and boxes exactly as much as an <code>ArrayList</code> — exercise 1 measures it at
     48 MB for two million integers, the same as the non-generic version. What removes the boxing is
     the type argument being a value type, not the angle brackets.</p>
@@ -508,7 +509,8 @@ class Program
   time.</p>
 
   <div class="callout callout--gotcha">
-    <p><strong>Variance works for reference types only.</strong> An
+    <h4>Variance works for reference types only</h4>
+    <p>An
     <code>IResult&lt;string&gt;</code> converts to <code>IResult&lt;object&gt;</code>; an
     <code>IResult&lt;Money&gt;</code>, where <code>Money</code> is a struct, does not — it is
     <code>CS0266</code>. A variance conversion is a <em>reference</em> conversion: the same pointer
@@ -768,7 +770,8 @@ static T Add&lt;T&gt;(T a, T b) =&gt; a + b;</code></pre>
   <h2>How to debug this class of problem</h2>
 
   <div class="callout callout--debug">
-    <p><strong>Unexpected allocation in generic code.</strong> Check what the type argument is
+    <h4>Unexpected allocation in generic code</h4>
+    <p>Check what the type argument is
     before blaming the generic. <code>typeof(T).IsValueType</code> at the top of the method
     answers it in one line; if it is <code>false</code>, or the type stores values in
     <code>object</code> fields, boxing is the explanation. Confirm with
@@ -777,7 +780,8 @@ static T Add&lt;T&gt;(T a, T b) =&gt; a + b;</code></pre>
   </div>
 
   <div class="callout callout--debug">
-    <p><strong>A static field is not shared where you expected.</strong> Each closed generic type
+    <h4>A static field is not shared where you expected</h4>
+    <p>Each closed generic type
     has its own copy: <code>Counter&lt;int&gt;.Instances</code> and
     <code>Counter&lt;string&gt;.Instances</code> are different fields. If a registry, cache or
     counter on a generic type is losing entries, print
@@ -786,8 +790,8 @@ static T Add&lt;T&gt;(T a, T b) =&gt; a + b;</code></pre>
   </div>
 
   <div class="callout callout--debug">
-    <p><strong><code>ArrayTypeMismatchException</code> from a plain element assignment.</strong>
-    The array's runtime type is more derived than its declared type — a <code>Dog[]</code> being
+    <h4><code>ArrayTypeMismatchException</code> from a plain element assignment</h4>
+    <p>The array's runtime type is more derived than its declared type — a <code>Dog[]</code> being
     held as <code>Animal[]</code>. Print <code>arr.GetType().GetElementType()</code> to see what it
     really is. The fix is to stop passing arrays by their base element type; use
     <code>IReadOnlyList&lt;T&gt;</code> if the callee only reads, or <code>List&lt;T&gt;</code> if
@@ -795,14 +799,15 @@ static T Add&lt;T&gt;(T a, T b) =&gt; a + b;</code></pre>
   </div>
 
   <div class="callout callout--debug">
-    <p><strong><code>CS0266</code> converting a generic interface with a struct argument.</strong>
-    Variance conversions are reference conversions. Check whether the type argument is a value type
+    <h4><code>CS0266</code> converting a generic interface with a struct argument</h4>
+    <p>Variance conversions are reference conversions. Check whether the type argument is a value type
     — if it is, no variance annotation will help, and the options are to make the type a class, or
     to convert explicitly at the boundary.</p>
   </div>
 
   <div class="callout callout--debug">
-    <p><strong>Reading an unfamiliar generic signature.</strong> Work outside in. Where do the type
+    <h4>Reading an unfamiliar generic signature</h4>
+    <p>Work outside in. Where do the type
     parameters appear — return positions, parameter positions, or both? That tells you whether the
     author could have marked variance and chose not to, or could not. Then check the constraints:
     they are the complete list of everything the body is allowed to assume about
@@ -814,7 +819,8 @@ static T Add&lt;T&gt;(T a, T b) =&gt; a + b;</code></pre>
   <h2>Why this matters in a real system</h2>
 
   <div class="callout callout--why">
-    <p><strong>A concrete case.</strong> A market-data service kept a rolling window of tick prices
+    <h4>A concrete case</h4>
+    <p>A market-data service kept a rolling window of tick prices
     in a cache written before generics were common in that codebase: a
     <code>Dictionary&lt;string, object&gt;</code> where the values were
     <code>List&lt;object&gt;</code> holding <code>decimal</code> prices. It handled roughly 40,000
@@ -850,7 +856,8 @@ static T Add&lt;T&gt;(T a, T b) =&gt; a + b;</code></pre>
   <h2>Misconceptions and anti-patterns</h2>
 
   <div class="callout callout--myth">
-    <p><strong>"Generics are C++ templates."</strong> Templates are expanded by the compiler into
+    <h4>"Generics are C++ templates"</h4>
+    <p>Templates are expanded by the compiler into
     source before compilation; generics are a runtime feature, and a closed generic type exists in
     metadata as a real type. That is why <code>typeof(List&lt;int&gt;)</code> works, why each
     closed type has its own static fields, and why a generic type can be instantiated by
@@ -858,14 +865,16 @@ static T Add&lt;T&gt;(T a, T b) =&gt; a + b;</code></pre>
   </div>
 
   <div class="callout callout--myth">
-    <p><strong>"Generics avoid boxing."</strong> A value type <em>argument</em> avoids boxing.
+    <h4>"Generics avoid boxing"</h4>
+    <p>A value type <em>argument</em> avoids boxing.
     <code>List&lt;object&gt;</code> is generic and allocated 48 MB for two million integers,
     identical to <code>ArrayList</code>. The saving comes from the runtime specialising the code
     for a value type, which it cannot do when the argument is <code>object</code>.</p>
   </div>
 
   <div class="callout callout--myth">
-    <p><strong>"<code>List&lt;Dog&gt;</code> is a <code>List&lt;Animal&gt;</code>."</strong> It is
+    <h4>"<code>List&lt;Dog&gt;</code> is a <code>List&lt;Animal&gt;</code>"</h4>
+    <p>It is
     not, and the reason is that <code>List&lt;T&gt;</code> has an <code>Add</code>. Allowing it
     would let you add a <code>Cat</code> through the base-typed reference.
     <code>IEnumerable&lt;Dog&gt;</code> <em>is</em> an <code>IEnumerable&lt;Animal&gt;</code>,
@@ -873,7 +882,8 @@ static T Add&lt;T&gt;(T a, T b) =&gt; a + b;</code></pre>
   </div>
 
   <div class="callout callout--myth">
-    <p><strong>"Arrays are the safe, simple option."</strong> Arrays are covariant, which is a hole
+    <h4>"Arrays are the safe, simple option"</h4>
+    <p>Arrays are covariant, which is a hole
     generics were designed to close. <code>Dog[]</code> assigns to <code>Animal[]</code> and throws
     <code>ArrayTypeMismatchException</code> on store. Every array element assignment in .NET carries
     a type check because of this — although exercise 4 measures that check as too cheap to see in
@@ -881,15 +891,17 @@ static T Add&lt;T&gt;(T a, T b) =&gt; a + b;</code></pre>
   </div>
 
   <div class="callout callout--myth">
-    <p><strong>"Variance works the same for structs."</strong> It does not work at all for structs.
+    <h4>"Variance works the same for structs"</h4>
+    <p>It does not work at all for structs.
     A variance conversion is a reference conversion, so <code>IResult&lt;Money&gt;</code> to
     <code>IResult&lt;object&gt;</code> is <code>CS0266</code> however the interface is annotated.
     Value type arguments are always invariant.</p>
   </div>
 
   <div class="callout callout--myth">
-    <p><strong>"A type parameter behaves like <code>dynamic</code> — I can call anything on
-    it."</strong> The opposite: with no constraint, <code>T</code> supports only what
+    <h4>"A type parameter behaves like <code>dynamic</code> — I can call anything on
+    it"</h4>
+    <p>The opposite: with no constraint, <code>T</code> supports only what
     <code>object</code> supports. No <code>+</code>, no <code>&lt;</code>, no <code>new T()</code>,
     no members of your own. Everything else has to be granted by a constraint.</p>
   </div>

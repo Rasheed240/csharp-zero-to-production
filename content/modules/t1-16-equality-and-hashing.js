@@ -194,7 +194,8 @@ Rule 1 is a correctness requirement. Rule 2 is why rule 1 is enough.</code></pre
   The <code>HashSet</code> holding "two equal items" has a count of two for the same reason.</p>
 
   <div class="callout callout--gotcha">
-    <p><strong>The compiler warns about exactly this.</strong> Overriding <code>Equals</code>
+    <h4>The compiler warns about exactly this</h4>
+    <p>Overriding <code>Equals</code>
     without <code>GetHashCode</code> produces:</p>
     <pre data-lang="console" data-title="CS0659"><code>warning CS0659: 'HalfDone' overrides Object.Equals(object o) but does not
                 override Object.GetHashCode()</code></pre>
@@ -321,7 +322,8 @@ class Program
   no setters gives this for free.</p>
 
   <div class="callout callout--warn">
-    <p><strong>The mutation does not have to be near the dictionary.</strong> In the example the
+    <h4>The mutation does not have to be near the dictionary</h4>
+    <p>In the example the
     two lines are adjacent. In a real system the object was put in a cache in one component and
     mutated by a completely different one that had no idea a dictionary was involved — which is
     also the argument from
@@ -458,7 +460,8 @@ Collision behaviour of A ^ B for swapped pairs:
   its square.</p>
 
   <div class="callout callout--note">
-    <p><strong>Reading the good rows honestly.</strong> The three good-hash rows are all between
+    <h4>Reading the good rows honestly</h4>
+    <p>The three good-hash rows are all between
     0.2 ms and 1.8 ms except one 18.4 ms outlier at n=10,000, which is a garbage collection or a
     tiering event rather than a property of the hash code. At this speed the measurement is
     dominated by noise, which is itself the finding: with a reasonable hash code, 40,000 insertions
@@ -798,7 +801,8 @@ class Program
   <code>BrokenComparer</code> above never returns 0 for equal values, which breaks it.</p>
 
   <div class="callout callout--warn">
-    <p><strong>An invalid comparer is not reliably detected.</strong> <code>Array.Sort</code> can
+    <h4>An invalid comparer is not reliably detected</h4>
+    <p><code>Array.Sort</code> can
     throw <code>InvalidOperationException</code> with "IComparer.Compare() method returns
     inconsistent results", and in this run it did not — it returned an array that is not
     sorted, with no error. A comparer that is not a total order is a silent wrong-answer bug, and
@@ -1042,7 +1046,8 @@ public override int GetHashCode() =&gt; CustomerId.GetHashCode();</code></pre>
   <h2>How to debug this class of problem</h2>
 
   <div class="callout callout--debug">
-    <p><strong>A dictionary or cache never finds anything.</strong> Test the key type on its own,
+    <h4>A dictionary or cache never finds anything</h4>
+    <p>Test the key type on its own,
     away from the collection. Construct two keys from identical inputs and print
     <code>k1.Equals(k2)</code> and <code>k1.GetHashCode() == k2.GetHashCode()</code>. Equal with
     different hashes is rule 1 broken — find the member <code>Equals</code> uses that
@@ -1052,7 +1057,8 @@ public override int GetHashCode() =&gt; CustomerId.GetHashCode();</code></pre>
   </div>
 
   <div class="callout callout--debug">
-    <p><strong>An entry is in the dictionary and cannot be found.</strong> Confirm it with
+    <h4>An entry is in the dictionary and cannot be found</h4>
+    <p>Confirm it with
     <code>Count</code> and enumeration, then compare the key's <em>current</em> hash code with what
     it must have been at insertion. If the key type has any settable property, that is the answer.
     A one-line diagnostic that catches it in production: iterate the dictionary and check
@@ -1061,7 +1067,8 @@ public override int GetHashCode() =&gt; CustomerId.GetHashCode();</code></pre>
   </div>
 
   <div class="callout callout--debug">
-    <p><strong>Lookups got slower as the collection grew.</strong> Measure the shape rather than
+    <h4>Lookups got slower as the collection grew</h4>
+    <p>Measure the shape rather than
     the absolute time: run the same operation at 1,000, 10,000 and 40,000 entries. Linear growth in
     per-lookup cost means a hash distribution problem. Confirm by grouping the keys' hash codes —
     <code>keys.GroupBy(k =&gt; k.GetHashCode()).Max(g =&gt; g.Count())</code> should be a small
@@ -1069,8 +1076,9 @@ public override int GetHashCode() =&gt; CustomerId.GetHashCode();</code></pre>
   </div>
 
   <div class="callout callout--debug">
-    <p><strong>Comparisons are unexpectedly slow and the profiler blames
-    <code>ValueType.Equals</code> or <code>RuntimeHelpers</code>.</strong> That is the reflection
+    <h4>Comparisons are unexpectedly slow and the profiler blames
+    <code>ValueType.Equals</code> or <code>RuntimeHelpers</code></h4>
+    <p>That is the reflection
     fallback. Check whether the type implements <code>IEquatable&lt;T&gt;</code>:
     <code>typeof(T).GetInterfaces()</code>, or print
     <code>EqualityComparer&lt;T&gt;.Default.GetType().Name</code> —
@@ -1079,7 +1087,8 @@ public override int GetHashCode() =&gt; CustomerId.GetHashCode();</code></pre>
   </div>
 
   <div class="callout callout--debug">
-    <p><strong>A sort produces wrong output or throws intermittently.</strong> The comparer is not
+    <h4>A sort produces wrong output or throws intermittently</h4>
+    <p>The comparer is not
     a total order. Check three things: does <code>Compare</code> ever return 0 for values it
     considers equal; is it consistent with itself when arguments are swapped; and is it implemented
     with subtraction, which overflows. Test it directly over every pair in a small sample and
@@ -1091,7 +1100,8 @@ public override int GetHashCode() =&gt; CustomerId.GetHashCode();</code></pre>
   <h2>Why this matters in a real system</h2>
 
   <div class="callout callout--why">
-    <p><strong>A concrete case.</strong> A rate-limiting service kept per-client counters in a
+    <h4>A concrete case</h4>
+    <p>A rate-limiting service kept per-client counters in a
     <code>Dictionary&lt;ClientKey, Counter&gt;</code>, where <code>ClientKey</code> combined an API
     key, an endpoint, and a time window. It was written as a class with <code>Equals</code>
     comparing all three and <code>GetHashCode</code> returning
@@ -1132,7 +1142,8 @@ public override int GetHashCode() =&gt; CustomerId.GetHashCode();</code></pre>
   <h2>Misconceptions and anti-patterns</h2>
 
   <div class="callout callout--myth">
-    <p><strong>"A hash code identifies an object."</strong> It groups objects. Two unequal objects
+    <h4>"A hash code identifies an object"</h4>
+    <p>It groups objects. Two unequal objects
     sharing a hash code is normal and permitted — there are more possible values than there are
     <code>int</code>s. A hash code is never an identifier, never a checksum, and must never be
     persisted or sent between processes:
@@ -1141,7 +1152,8 @@ public override int GetHashCode() =&gt; CustomerId.GetHashCode();</code></pre>
   </div>
 
   <div class="callout callout--myth">
-    <p><strong>"My type works fine — the tests pass."</strong> Check whether the tests use a
+    <h4>"My type works fine — the tests pass"</h4>
+    <p>Check whether the tests use a
     <code>List</code>. <code>List.Contains</code> compares linearly with <code>Equals</code> and
     never hashes, so a type with a broken <code>GetHashCode</code> passes every list-based test and
     fails against a dictionary. Verified above: the same pair gave
@@ -1149,7 +1161,8 @@ public override int GetHashCode() =&gt; CustomerId.GetHashCode();</code></pre>
   </div>
 
   <div class="callout callout--myth">
-    <p><strong>"<code>==</code> and <code>Equals</code> do the same thing."</strong> Measured: two
+    <h4>"<code>==</code> and <code>Equals</code> do the same thing"</h4>
+    <p>Measured: two
     identical strings held in <code>object</code> variables compared <code>False</code> with
     <code>==</code> and <code>True</code> with <code>Equals</code>. <code>==</code> is chosen at
     compile time from the static type; <code>Equals</code> is virtual. For a class with no operator,
@@ -1157,21 +1170,24 @@ public override int GetHashCode() =&gt; CustomerId.GetHashCode();</code></pre>
   </div>
 
   <div class="callout callout--myth">
-    <p><strong>"A simple hash code is fine, it only needs to be legal."</strong> Legal and
+    <h4>"A simple hash code is fine, it only needs to be legal"</h4>
+    <p>Legal and
     catastrophic are compatible: a constant hash code measured 1,300× slower to insert and 6,000×
     slower to look up at 40,000 keys, with every answer correct. Legality is rule 1; usefulness is
     an even spread.</p>
   </div>
 
   <div class="callout callout--myth">
-    <p><strong>"Structs get value equality for free, so they are fine as keys."</strong> They get
+    <h4>"Structs get value equality for free, so they are fine as keys"</h4>
+    <p>They get
     <em>correct</em> equality for free and, without <code>IEquatable&lt;T&gt;</code>, it runs
     through reflection at 80–95× the cost and allocates when boxed. Declare the type a
     <code>readonly record struct</code> and the compiler writes the fast version.</p>
   </div>
 
   <div class="callout callout--myth">
-    <p><strong>"If the comparer is wrong, sorting will throw."</strong> It may. This module's run
+    <h4>"If the comparer is wrong, sorting will throw"</h4>
+    <p>It may. This module's run
     produced an unsorted array with no exception at all. An inconsistent comparer is a silent
     wrong-answer bug, and the common cause — implementing <code>Compare</code> as subtraction —
     is correct for small values and wrong once they overflow.</p>

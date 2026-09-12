@@ -223,8 +223,8 @@ class Program
   computed.</p>
 
   <div class="callout callout--gotcha">
-    <p><strong>The two read-only families are not parallel.</strong>
-    <code>IReadOnlyList&lt;T&gt;</code> is <em>not</em> a base of <code>IList&lt;T&gt;</code> —
+    <h4>The two read-only families are not parallel</h4>
+    <p><code>IReadOnlyList&lt;T&gt;</code> is <em>not</em> a base of <code>IList&lt;T&gt;</code> —
     they are separate branches that both extend <code>IEnumerable&lt;T&gt;</code>. That is why
     <code>Queue&lt;T&gt;</code> is an <code>IReadOnlyCollection</code> and not an
     <code>ICollection&lt;T&gt;</code>, and it is why a method taking
@@ -418,8 +418,9 @@ class Program
   <code>MoveNext</code>.</p>
 
   <div class="callout callout--warn">
-    <p><strong>This is why "return <code>IEnumerable</code> for flexibility" is not free
-    advice.</strong> It hands the caller something whose cost, timing, stability and failure
+    <h4>This is why "return <code>IEnumerable</code> for flexibility" is not free
+    advice</h4>
+    <p>It hands the caller something whose cost, timing, stability and failure
     behaviour all depend on how they use it — and gives them no way to tell from the type. The
     flexibility is real; so is the obligation to know you have it.</p>
   </div>
@@ -715,7 +716,8 @@ class Program
   optimisation LINQ performs internally.</p>
 
   <div class="callout callout--note">
-    <p><strong>The asymmetry is the whole guidance.</strong> Be <em>permissive</em> in what you
+    <h4>The asymmetry is the whole guidance</h4>
+    <p>Be <em>permissive</em> in what you
     accept — <code>IEnumerable&lt;T&gt;</code> — and <em>specific</em> about what you return.
     A return type is a promise about what the caller gets; a parameter type is a demand on what
     they must have.</p>
@@ -786,7 +788,8 @@ public IReadOnlyList&lt;Order&gt; All =&gt; _view;</code></pre>
   <h2>How to debug this class of problem</h2>
 
   <div class="callout callout--debug">
-    <p><strong>A query runs more times than the code appears to ask for.</strong> Count the passes:
+    <h4>A query runs more times than the code appears to ask for</h4>
+    <p>Count the passes:
     put a counter in the predicate, as this module's examples do, and print it. Every
     <code>Count()</code>, <code>Any()</code>, <code>First()</code>, <code>ToList()</code> and
     <code>foreach</code> over a deferred sequence is one pass. If the count is a multiple of the
@@ -794,15 +797,17 @@ public IReadOnlyList&lt;Order&gt; All =&gt; _view;</code></pre>
   </div>
 
   <div class="callout callout--debug">
-    <p><strong>An exception's stack trace points at a <code>foreach</code> rather than at the
-    method that failed.</strong> The sequence is lazy, and the body of the iterator method ran
+    <h4>An exception's stack trace points at a <code>foreach</code> rather than at the
+    method that failed</h4>
+    <p>The sequence is lazy, and the body of the iterator method ran
     during your loop. Look at what produced the sequence, not at the loop. The same reasoning
     applies to a database connection held open longer than expected — the query executes while the
     caller iterates.</p>
   </div>
 
   <div class="callout callout--debug">
-    <p><strong>Results changed between two reads of the same variable.</strong> The variable holds a
+    <h4>Results changed between two reads of the same variable</h4>
+    <p>The variable holds a
     query, not a result. Confirm by checking its runtime type:
     <code>seq.GetType().Name</code> on a materialised result says <code>List&#96;1</code> or
     <code>Order[]</code>; on a deferred one it says something like
@@ -811,14 +816,16 @@ public IReadOnlyList&lt;Order&gt; All =&gt; _view;</code></pre>
   </div>
 
   <div class="callout callout--debug">
-    <p><strong><code>ToList()</code> is slower or allocates more than expected.</strong> Check
+    <h4><code>ToList()</code> is slower or allocates more than expected</h4>
+    <p>Check
     whether the source is a real collection. If it came through an iterator method,
     <code>ToList()</code> cannot pre-size and grows repeatedly — measured at 8.9× slower and 2.1×
     the allocation. Removing a pointless <code>yield return</code> wrapper restores it.</p>
   </div>
 
   <div class="callout callout--debug">
-    <p><strong>Deciding a return type.</strong> Answer three questions in order. <em>Has the work
+    <h4>Deciding a return type</h4>
+    <p>Answer three questions in order. <em>Has the work
     already been done?</em> If not, <code>IEnumerable&lt;T&gt;</code> is honest. <em>Will the caller
     want a count or an index?</em> If so, <code>IReadOnlyList&lt;T&gt;</code>. <em>Must the caller
     be unable to modify it?</em> Then back that with a <code>ReadOnlyCollection&lt;T&gt;</code>,
@@ -830,7 +837,8 @@ public IReadOnlyList&lt;Order&gt; All =&gt; _view;</code></pre>
   <h2>Why this matters in a real system</h2>
 
   <div class="callout callout--why">
-    <p><strong>A concrete case.</strong> An order-processing service had a repository method
+    <h4>A concrete case</h4>
+    <p>An order-processing service had a repository method
     <code>IEnumerable&lt;Order&gt; GetPending()</code> that returned a lazily-evaluated database
     query. The handler logged the count, took the first for a correlation id, and looped over the
     rest — the three-pass pattern above. Each pass reissued the query.</p>
@@ -867,14 +875,16 @@ public IReadOnlyList&lt;Order&gt; All =&gt; _view;</code></pre>
   <h2>Misconceptions and anti-patterns</h2>
 
   <div class="callout callout--myth">
-    <p><strong>"Return <code>IEnumerable&lt;T&gt;</code> — it is the most flexible."</strong> It is
+    <h4>"Return <code>IEnumerable&lt;T&gt;</code> — it is the most flexible"</h4>
+    <p>It is
     the least informative. It tells the caller nothing about whether the work has been done, how
     much there is, or whether two passes agree. If you have already materialised a list, saying so
     costs nothing and prevents the multiple-enumeration bug entirely.</p>
   </div>
 
   <div class="callout callout--myth">
-    <p><strong>"<code>IReadOnlyList&lt;T&gt;</code> means the caller cannot modify it."</strong> It
+    <h4>"<code>IReadOnlyList&lt;T&gt;</code> means the caller cannot modify it"</h4>
+    <p>It
     means the interface has no mutating members. Verified: an
     <code>IReadOnlyList&lt;int&gt;</code> holding a <code>List&lt;int&gt;</code> passed
     <code>is IList&lt;int&gt;</code> and was mutated through the cast. It is a statement of intent;
@@ -882,7 +892,8 @@ public IReadOnlyList&lt;Order&gt; All =&gt; _view;</code></pre>
   </div>
 
   <div class="callout callout--myth">
-    <p><strong>"A type test tells me whether a collection is writable."</strong> A genuine
+    <h4>"A type test tells me whether a collection is writable"</h4>
+    <p>A genuine
     <code>ReadOnlyCollection&lt;T&gt;</code> also answers <code>true</code> to
     <code>is IList&lt;T&gt;</code>, and throws <code>NotSupportedException</code> on
     <code>Add</code>. The member existing and the call succeeding are different facts;
@@ -890,7 +901,8 @@ public IReadOnlyList&lt;Order&gt; All =&gt; _view;</code></pre>
   </div>
 
   <div class="callout callout--myth">
-    <p><strong>"Declaring a variable <code>IEnumerable</code> makes LINQ slower."</strong> Measured:
+    <h4>"Declaring a variable <code>IEnumerable</code> makes LINQ slower"</h4>
+    <p>Measured:
     <code>Count()</code> on an <code>IEnumerable</code> holding a <code>List</code> was as fast as
     <code>.Count</code>, because LINQ type-tests at run time and finds the
     <code>ICollection</code>. What costs is the sequence genuinely not being a collection —
@@ -898,15 +910,17 @@ public IReadOnlyList&lt;Order&gt; All =&gt; _view;</code></pre>
   </div>
 
   <div class="callout callout--myth">
-    <p><strong>"Lazy is always better — it avoids work."</strong> It avoids work only if the caller
+    <h4>"Lazy is always better — it avoids work"</h4>
+    <p>It avoids work only if the caller
     stops early. If they enumerate more than once it multiplies the work, and it makes the result
     unstable. For anything the caller will read fully, or read twice, materialising is both faster
     and more predictable.</p>
   </div>
 
   <div class="callout callout--myth">
-    <p><strong>"<code>IReadOnlyList&lt;T&gt;</code> is the read-only version of
-    <code>IList&lt;T&gt;</code>."</strong> They are separate branches, not base and derived. A
+    <h4>"<code>IReadOnlyList&lt;T&gt;</code> is the read-only version of
+    <code>IList&lt;T&gt;</code>"</h4>
+    <p>They are separate branches, not base and derived. A
     variable typed <code>IList&lt;T&gt;</code> cannot be passed to a parameter typed
     <code>IReadOnlyList&lt;T&gt;</code> without a cast, even though every concrete list implements
     both.</p>

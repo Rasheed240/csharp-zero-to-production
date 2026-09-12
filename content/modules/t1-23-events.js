@@ -213,7 +213,8 @@ class Program
   outside its declaring type — and the one-line summary of what the keyword buys.</p>
 
   <div class="callout callout--note">
-    <p><strong>What the keyword does not change.</strong> Raising is identical —
+    <h4>What the keyword does not change</h4>
+    <p>Raising is identical —
     <code>RealEvent?.Invoke(message)</code> inside the class, exactly as for the field. The
     invocation list still behaves as
     <a href="#/m/t1-21-delegates">Delegates</a> described: all handlers run, only the last return
@@ -398,8 +399,9 @@ public sealed class CountingWidget
   equal to the one you added, and each lambda expression is its own method.</p>
 
   <div class="callout callout--warn">
-    <p><strong>The asymmetry that makes this a design problem rather than a discipline
-    problem.</strong> The subscriber decides to subscribe, but the <em>publisher's</em> lifetime
+    <h4>The asymmetry that makes this a design problem rather than a discipline
+    problem</h4>
+    <p>The subscriber decides to subscribe, but the <em>publisher's</em> lifetime
     decides whether that leaks. A subscriber cannot tell from the API whether the publisher is a
     long-lived singleton or a short-lived object — and if the publisher is short-lived, there is no
     leak and no need to unsubscribe at all. So the correct behaviour depends on information the
@@ -639,8 +641,9 @@ class Program
   shows 2 of 2 good handlers running against 1 of 2 for the naive raise.</p>
 
   <div class="callout callout--gotcha">
-    <p><strong>The weak-subscription result is the most useful thing in this section, because it is
-    a warning about the obvious fix.</strong> Holding a <code>WeakReference</code> to the
+    <h4>The weak-subscription result is the most useful thing in this section, because it is
+    a warning about the obvious fix</h4>
+    <p>Holding a <code>WeakReference</code> to the
     <em>delegate</em> does not work: <code>widget.OnPrice</code> creates a delegate object that
     nothing else references, so it may be collected immediately, at a moment nothing predicts. The
     measurement happened to survive, which is worse than failing — a subscription that vanishes
@@ -767,7 +770,8 @@ feed.PriceChanged -= handler;</code></pre>
   <h2>How to debug this class of problem</h2>
 
   <div class="callout callout--debug">
-    <p><strong>Memory grows with usage and never falls.</strong> Take a dump and look at the
+    <h4>Memory grows with usage and never falls</h4>
+    <p>Take a dump and look at the
     retention path for the leaked type. If it runs through a delegate to a long-lived object, it is
     an event subscription. In a debugger, the fastest confirmation is to expose the subscriber count
     — <code>PriceChanged?.GetInvocationList().Length ?? 0</code> — and watch it grow across
@@ -776,7 +780,8 @@ feed.PriceChanged -= handler;</code></pre>
   </div>
 
   <div class="callout callout--debug">
-    <p><strong>A handler runs for an object that should be gone.</strong> That is the same leak seen
+    <h4>A handler runs for an object that should be gone</h4>
+    <p>That is the same leak seen
     from the CPU side, and it is often noticed first: work is being done for closed windows,
     completed requests or disposed components. Log <code>Method.DeclaringType</code> and an
     instance id from inside the handler; ids that should have been retired confirm it
@@ -784,15 +789,16 @@ feed.PriceChanged -= handler;</code></pre>
   </div>
 
   <div class="callout callout--debug">
-    <p><strong>Subscribers stopped receiving notifications and nothing was unsubscribed.</strong>
-    Look for a public delegate <em>field</em> rather than an event, and for an assignment
+    <h4>Subscribers stopped receiving notifications and nothing was unsubscribed</h4>
+    <p>Look for a public delegate <em>field</em> rather than an event, and for an assignment
     (<code>=</code>) where <code>+=</code> was meant. One character, and every existing subscriber
     is discarded silently. Changing the field to an <code>event</code> turns that mistake into
     <code>CS0070</code> at compile time.</p>
   </div>
 
   <div class="callout callout--debug">
-    <p><strong>A publisher reports failures it did not cause.</strong> Read the stack trace: frames
+    <h4>A publisher reports failures it did not cause</h4>
+    <p>Read the stack trace: frames
     below the throw belonging to a subscriber, and frames above belonging to the raise site, mean
     the exception crossed the invocation list. Everything registered after the failing subscriber
     also silently did not run — which is usually the more damaging half and leaves no trace at
@@ -800,7 +806,8 @@ feed.PriceChanged -= handler;</code></pre>
   </div>
 
   <div class="callout callout--debug">
-    <p><strong>Proving a subscription leaks, rather than arguing about it.</strong> Create the
+    <h4>Proving a subscription leaks, rather than arguing about it</h4>
+    <p>Create the
     subscriber in a method, keep a <code>WeakReference</code>, let the method return, force two
     collections with <code>WaitForPendingFinalizers</code> between, and read <code>IsAlive</code>.
     That is what this module does, and it converts "I think this leaks" into a boolean in about ten
@@ -812,7 +819,8 @@ feed.PriceChanged -= handler;</code></pre>
   <h2>Why this matters in a real system</h2>
 
   <div class="callout callout--why">
-    <p><strong>A concrete case.</strong> A market-data dashboard created a <code>PriceWidget</code>
+    <h4>A concrete case</h4>
+    <p>A market-data dashboard created a <code>PriceWidget</code>
     per instrument panel, each holding about 2 MB of rendering buffers. Panels were opened and
     closed constantly — a trader might cycle through 300 instruments in a session. Each widget
     subscribed to a <code>MarketFeed</code> created once at application start.</p>
@@ -850,7 +858,8 @@ feed.PriceChanged -= handler;</code></pre>
   <h2>Misconceptions and anti-patterns</h2>
 
   <div class="callout callout--myth">
-    <p><strong>"<code>event</code> makes it safe."</strong> It restricts <em>who may raise and
+    <h4>"<code>event</code> makes it safe"</h4>
+    <p>It restricts <em>who may raise and
     replace</em> — that is all. The invocation list still runs every handler, still stops at the
     first exception, still discards every return value but the last, and still holds every
     subscriber. Every failure mode from <a href="#/m/t1-21-delegates">Delegates</a> is
@@ -858,26 +867,30 @@ feed.PriceChanged -= handler;</code></pre>
   </div>
 
   <div class="callout callout--myth">
-    <p><strong>"The subscriber holds the publisher."</strong> The other way round. The publisher's
+    <h4>"The subscriber holds the publisher"</h4>
+    <p>The other way round. The publisher's
     invocation list holds a delegate whose <code>Target</code> is the subscriber. That is why a
     short-lived subscriber on a long-lived publisher leaks, and why the code — which reads as the
     subscriber registering an interest — gives no hint of it.</p>
   </div>
 
   <div class="callout callout--myth">
-    <p><strong>"A leaked subscriber only wastes memory."</strong> It also runs. Measured: three
+    <h4>"A leaked subscriber only wastes memory"</h4>
+    <p>It also runs. Measured: three
     unreachable widgets all executed their handler on the next publish. In the dashboard case that
     was 600,000 pointless handler calls a second, and the CPU cost exceeded the memory cost.</p>
   </div>
 
   <div class="callout callout--myth">
-    <p><strong>"I unsubscribed, so it is fine."</strong> Only if you unsubscribed the same delegate
+    <h4>"I unsubscribed, so it is fine"</h4>
+    <p>Only if you unsubscribed the same delegate
     you subscribed. A lambda cannot be removed by writing an identical lambda — verified with the
     subscriber count unchanged — and nothing reports the failure.</p>
   </div>
 
   <div class="callout callout--myth">
-    <p><strong>"Weak events solve this."</strong> The obvious implementation does not: a weak
+    <h4>"Weak events solve this"</h4>
+    <p>The obvious implementation does not: a weak
     reference to the <em>delegate</em> can be collected at any moment, because nothing else
     references it. That turns a predictable leak into an unpredictable disappearance, which is
     harder to diagnose. The correct form holds the target weakly and the method strongly, and is
@@ -885,8 +898,8 @@ feed.PriceChanged -= handler;</code></pre>
   </div>
 
   <div class="callout callout--myth">
-    <p><strong>"<code>if (e != null) e(x);</code> is the same as <code>e?.Invoke(x)</code>."</strong>
-    The first reads the field twice and can throw <code>NullReferenceException</code> if another
+    <h4>"<code>if (e != null) e(x);</code> is the same as <code>e?.Invoke(x)</code>"</h4>
+    <p>The first reads the field twice and can throw <code>NullReferenceException</code> if another
     thread removes the last handler in between. The second reads once into a temporary. Neither
     prevents a newly unsubscribed handler from being called once more, which handlers must
     tolerate.</p>

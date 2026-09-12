@@ -136,6 +136,18 @@ function lintFile(file) {
   const sections = html.match(/<section id="/g) || [];
   if (sections.length < 6) warnings.push(`only ${sections.length} sections — the lesson shape expects more`);
 
+  // STYLE-CONTRACT.md §Callouts: "The <h4> inside a callout is required." An
+  // earlier house style led with <p><strong>…</strong> instead, which renders
+  // as body text and gives the reader nothing to scan.
+  const calloutsMissingHeading = [...html.matchAll(/<div class="callout callout--([a-z]+)">([\s\S]*?)<\/div>/g)]
+    .filter((c) => !/<h4[\s>]/.test(c[2]));
+  if (calloutsMissingHeading.length) {
+    errors.push(
+      `${calloutsMissingHeading.length} callout(s) with no <h4> heading ` +
+      `(STYLE-CONTRACT.md §Callouts): ${[...new Set(calloutsMissingHeading.map((c) => "callout--" + c[1]))].join(", ")}`
+    );
+  }
+
   const sectionIds = [...html.matchAll(/<section id="([^"]+)"/g)].map((x) => x[1]);
   const seen = new Set();
   sectionIds.forEach((id) => {

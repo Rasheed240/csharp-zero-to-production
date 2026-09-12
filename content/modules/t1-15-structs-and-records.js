@@ -223,7 +223,8 @@ record struct and readonly record struct:
   module.</p>
 
   <div class="callout callout--note">
-    <p><strong>Note the generated setters.</strong> <code>set_Name</code> and <code>set_Age</code>
+    <h4>Note the generated setters</h4>
+    <p><code>set_Name</code> and <code>set_Age</code>
     appear in the list because positional record properties are <code>init</code>-only, and
     <code>init</code> compiles to a setter the compiler restricts to object initialisation.
     <a href="#/m/t1-08-classes-and-objects">Classes and Objects</a> introduced
@@ -411,7 +412,8 @@ class Program
   a fresh key with a fresh list, so every lookup misses.</p>
 
   <div class="callout callout--myth">
-    <p><strong>Immutable collections do not fix it, and this is worth getting right.</strong> The
+    <h4>Immutable collections do not fix it, and this is worth getting right</h4>
+    <p>The
     natural next move is to reach for <code>ImmutableArray&lt;T&gt;</code>, reasoning that an
     immutable collection ought to compare by value. Measured: <code>g == h</code> is
     <code>False</code>. <code>ImmutableArray&lt;T&gt;</code> is a struct wrapping an array, and its
@@ -991,7 +993,8 @@ class Program
   deserialisation — and no constructor ran to produce it.</p>
 
   <div class="callout callout--gotcha">
-    <p><strong><code>default(Sku)</code> bypasses validation entirely.</strong> Every struct has a
+    <h4><code>default(Sku)</code> bypasses validation entirely</h4>
+    <p>Every struct has a
     zero value that no constructor produced — all fields zeroed, all references
     <code>null</code>. <code>Sku</code> validates in its property initialiser, and
     <code>default(Sku).Value</code> is still <code>null</code>. A struct cannot make itself
@@ -1074,7 +1077,8 @@ public readonly record struct Position(int X, int Y);
   <h2>How to debug this class of problem</h2>
 
   <div class="callout callout--debug">
-    <p><strong>A dictionary or cache keyed on a record always misses.</strong> Test the key type in
+    <h4>A dictionary or cache keyed on a record always misses</h4>
+    <p>Test the key type in
     isolation before looking at the cache: construct two keys from identical inputs and print
     <code>k1 == k2</code> and <code>k1.GetHashCode() == k2.GetHashCode()</code>. If equality is
     false, look at each member and ask whether that member's type overrides <code>Equals</code> —
@@ -1083,7 +1087,8 @@ public readonly record struct Position(int X, int Y);
   </div>
 
   <div class="callout callout--debug">
-    <p><strong>Two objects that should be independent change together.</strong> Look for a
+    <h4>Two objects that should be independent change together</h4>
+    <p>Look for a
     <code>with</code> expression, or any copy, between them. Confirm with
     <code>ReferenceEquals(a.Member, b.Member)</code> on each reference-typed member — a
     <code>True</code> is the shared object. The fix is to copy that member explicitly in whatever
@@ -1091,7 +1096,8 @@ public readonly record struct Position(int X, int Y);
   </div>
 
   <div class="callout callout--debug">
-    <p><strong>A mutation appears to do nothing.</strong> Check whether the type is a struct
+    <h4>A mutation appears to do nothing</h4>
+    <p>Check whether the type is a struct
     (<code>typeof(T).IsValueType</code>), then check what produced the value you mutated. A
     <code>List&lt;T&gt;</code> indexer, a <code>foreach</code> variable, a property getter and a
     method return all give you a copy; an array indexer, a local variable and a
@@ -1100,7 +1106,8 @@ public readonly record struct Position(int X, int Y);
   </div>
 
   <div class="callout callout--debug">
-    <p><strong>A struct-heavy hot path is slower than expected.</strong> Suspect copying before
+    <h4>A struct-heavy hot path is slower than expected</h4>
+    <p>Suspect copying before
     allocation. Check the size with <code>Unsafe.SizeOf&lt;T&gt;()</code>; anything past about 16
     bytes being passed around frequently is worth comparing against a class. Check for missing
     <code>readonly</code> on the struct, which forces defensive copies where it is read through a
@@ -1109,7 +1116,8 @@ public readonly record struct Position(int X, int Y);
   </div>
 
   <div class="callout callout--debug">
-    <p><strong>A value has all-default members and nothing constructed it.</strong> That is
+    <h4>A value has all-default members and nothing constructed it</h4>
+    <p>That is
     <code>default(T)</code> for a struct: an unassigned field, an uninitialised array element, or
     a deserialised value. No constructor ran, so no validation ran. Search for places the value can
     arrive without a constructor, and consider whether a sealed record class — which cannot be
@@ -1121,7 +1129,8 @@ public readonly record struct Position(int X, int Y);
   <h2>Why this matters in a real system</h2>
 
   <div class="callout callout--why">
-    <p><strong>A concrete case.</strong> A pricing API cached quote results in an in-memory
+    <h4>A concrete case</h4>
+    <p>A pricing API cached quote results in an in-memory
     dictionary keyed by a request record: <code>record QuoteKey(string Product, string Currency,
     List&lt;string&gt; Options)</code>. The cache was added to relieve a downstream pricing engine
     that took about 180 ms per call and was the service's bottleneck. Expected hit rate, from the
@@ -1161,7 +1170,8 @@ public readonly record struct Position(int X, int Y);
   <h2>Misconceptions and anti-patterns</h2>
 
   <div class="callout callout--myth">
-    <p><strong>"Records are immutable."</strong> A <code>record</code> class has
+    <h4>"Records are immutable"</h4>
+    <p>A <code>record</code> class has
     <code>init</code>-only properties, which prevents reassignment after construction and nothing
     else — an <code>init</code>-only <code>List&lt;T&gt;</code> is fully writable by anyone holding
     it. A <code>record struct</code> without <code>readonly</code> has genuinely settable
@@ -1169,15 +1179,16 @@ public readonly record struct Position(int X, int Y);
   </div>
 
   <div class="callout callout--myth">
-    <p><strong>"Records compare by value, so a record of anything compares by value."</strong>
-    Member-by-member, using each member's own <code>Equals</code>. Put a
+    <h4>"Records compare by value, so a record of anything compares by value"</h4>
+    <p>Member-by-member, using each member's own <code>Equals</code>. Put a
     <code>List&lt;T&gt;</code>, an array, an <code>ImmutableArray&lt;T&gt;</code> or any class that
     does not override <code>Equals</code> in a record, and that member compares by reference —
     measured, for all four.</p>
   </div>
 
   <div class="callout callout--myth">
-    <p><strong>"Use an immutable collection and record equality will work."</strong> Verified
+    <h4>"Use an immutable collection and record equality will work"</h4>
+    <p>Verified
     false: <code>ImmutableArray&lt;T&gt;</code> and <code>ImmutableList&lt;T&gt;</code> both
     compare the underlying storage by reference. Immutable means "cannot be changed", not
     "compared by contents". You have to write <code>Equals</code> and <code>GetHashCode</code>, or
@@ -1185,13 +1196,15 @@ public readonly record struct Position(int X, int Y);
   </div>
 
   <div class="callout callout--myth">
-    <p><strong>"<code>with</code> gives you a safe independent copy."</strong> It is shallow. The
+    <h4>"<code>with</code> gives you a safe independent copy"</h4>
+    <p>It is shallow. The
     copy shares every reference-typed member with the original, so editing "only the copy" edits
     both. Non-destructive refers to the record, not to what it points at.</p>
   </div>
 
   <div class="callout callout--myth">
-    <p><strong>"Structs are faster because they avoid allocation."</strong> The allocation half is
+    <h4>"Structs are faster because they avoid allocation"</h4>
+    <p>The allocation half is
     exactly right — zero bytes and zero gen0 collections, against 918 and 3,060 for the class
     versions. The speed half is not: the small class was faster in all three samples. Gen0
     allocation is a pointer bump; copying a struct on every call is not free. Choose structs to
@@ -1199,8 +1212,8 @@ public readonly record struct Position(int X, int Y);
   </div>
 
   <div class="callout callout--myth">
-    <p><strong>"A record base and a derived record with the same values should be equal."</strong>
-    They are not, deliberately. Records compare <code>EqualityContract</code> — the runtime type —
+    <h4>"A record base and a derived record with the same values should be equal"</h4>
+    <p>They are not, deliberately. Records compare <code>EqualityContract</code> — the runtime type —
     first, because allowing it would make equality asymmetric: the base would say equal and the
     derived would not. Two separately constructed identical <em>derived</em> values are still
     equal.</p>

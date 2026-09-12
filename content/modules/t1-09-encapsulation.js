@@ -95,7 +95,8 @@ CSPREP.module({
   is yours to change.</p>
 
   <div class="callout callout--why">
-    <p><strong>Why this matters in a real system.</strong> A payments team had a
+    <h4>Why this matters in a real system</h4>
+    <p>A payments team had a
     <code>Money</code> class with a <code>public decimal Amount</code> field, used by 41 call
     sites across six services. When a rounding bug turned up, the fix needed the amount to be
     stored in minor units (pence) internally while still being read as pounds. With a field, the
@@ -247,7 +248,8 @@ still valid: quantity 3, total 29.97</code></pre>
   someone adds without reading the rest of the class.</p>
 
   <div class="callout callout--gotcha">
-    <p><strong>The open version fails before it runs.</strong> Compile
+    <h4>The open version fails before it runs</h4>
+    <p>Compile
     <code>OpenBasketLine</code> with <code>public string Sku;</code> and the compiler emits
     warning CS8618: "Non-nullable field 'Sku' must contain a non-null value when exiting
     constructor." The class has no constructor, so there is no point at which the field is
@@ -534,7 +536,8 @@ class Program
   it is taken apart.</p>
 
   <div class="callout callout--note">
-    <p><strong>What this does and does not license.</strong> It says the property
+    <h4>What this does and does not license</h4>
+    <p>It says the property
     <em>abstraction</em> is free for simple accessors on a hot path. It says nothing about a
     getter that does work — the section on side effects below measures one that is 138 times
     slower than the stored equivalent. "Properties are as fast as fields" holds only for
@@ -636,7 +639,8 @@ exit code: 127</code></pre>
   application was not rebuilt.</p>
 
   <div class="callout callout--gotcha">
-    <p><strong>The reverse direction breaks too.</strong> Turning a property back into a field
+    <h4>The reverse direction breaks too</h4>
+    <p>Turning a property back into a field
     produces <code>MissingMethodException</code> instead, naming <code>get_Markup</code>. And this
     is not limited to fields and properties: changing a property into a method, renaming a
     parameter that callers pass by name, or reordering the members of an enum are all
@@ -686,7 +690,8 @@ Price of 80.00 becomes 100.0000</code></pre>
   rebuild of everything that referenced it.</p>
 
   <div class="callout callout--why">
-    <p><strong>Why this matters in a real system.</strong> This is why the .NET base class library
+    <h4>Why this matters in a real system</h4>
+    <p>This is why the .NET base class library
     exposes almost no public fields, and why analyser rule CA1051 ("Do not declare visible
     instance fields") exists. It is also why the exceptions are exceptions: <code>public</code>
     fields are defensible in a type that ships in the same assembly as everything using it, and in
@@ -992,7 +997,8 @@ error CS0122: 'Widget.ProtectedInternal' is inaccessible due to its protection l
   changes nothing about it.</p>
 
   <div class="callout callout--warn">
-    <p><strong>What that means when you use it.</strong> <code>InternalsVisibleTo</code> is
+    <h4>What that means when you use it</h4>
+    <p><code>InternalsVisibleTo</code> is
     usually added so a test project can reach a helper. The grant is not scoped to the members you
     had in mind: it applies to every <code>internal</code>, <code>protected internal</code> and
     <code>private protected</code> member in the whole assembly, for the life of the attribute.
@@ -1232,7 +1238,8 @@ the view taken before the add now reports 2 lines
   runtime.</p>
 
   <div class="callout callout--gotcha">
-    <p><strong>A wrapper is a view, not a snapshot.</strong> The fourth block is the part that is
+    <h4>A wrapper is a view, not a snapshot</h4>
+    <p>The fourth block is the part that is
     genuinely surprising: a caller who took <code>safe.Lines</code>, saw one item, and held onto
     it will find it reports two items after the owner adds a line. <code>ReadOnlyCollection</code>
     means "you cannot change this through this reference". It does not mean the contents are
@@ -1481,7 +1488,8 @@ final: 2 lines, total 54.47, 4 mutations</code></pre>
   than as a comment is what makes it testable.</p>
 
   <div class="callout callout--note">
-    <p><strong>On <code>sealed</code>.</strong> Both classes are <code>sealed</code>, meaning
+    <h4>On <code>sealed</code></h4>
+    <p>Both classes are <code>sealed</code>, meaning
     nothing can inherit from them. That is a deliberate part of the encapsulation: a subclass can
     override behaviour and break invariants the base class was guaranteeing.
     <a href="#/m/t1-10-inheritance">Inheritance</a> and
@@ -1664,7 +1672,8 @@ class Program
   number.</p>
 
   <div class="callout callout--gotcha">
-    <p><strong>This hides from the debugger, and from itself.</strong> A watch window evaluates
+    <h4>This hides from the debugger, and from itself</h4>
+    <p>A watch window evaluates
     every property of the object you are inspecting, so stepping through a method that touches a
     computed property runs that getter repeatedly — meaning any counter, cache, or log inside it
     reports numbers that include your own inspection. A getter with a side effect can be changed
@@ -1818,7 +1827,8 @@ logging the object threw DivideByZeroException
   from the earlier section. The invariants are still unenforced.</p>
 
   <div class="callout callout--warn">
-    <p><strong>Where this is the right answer anyway.</strong> Types that exist only to carry data
+    <h4>Where this is the right answer anyway</h4>
+    <p>Types that exist only to carry data
     across a boundary — the shape a JSON request deserialises into, a row read from a database,
     a message off a queue — legitimately have public setters, because something outside your code
     fills them in one property at a time. The mistake is not writing such a type. It is letting it
@@ -1909,7 +1919,8 @@ Every private member, listed by anything that can load the type:
   memory — never by <code>private</code>.</p>
 
   <div class="callout callout--myth">
-    <p><strong>The precise version of that claim.</strong> "Access modifiers are not enforced at
+    <h4>The precise version of that claim</h4>
+    <p>"Access modifiers are not enforced at
     runtime" is the folklore, and it is wrong. Compiled IL that reaches a member it is not
     entitled to fails at runtime with <code>FieldAccessException</code> or
     <code>MethodAccessException</code> — the CLR checks. Take the cross-assembly example above,
@@ -1930,8 +1941,9 @@ Unhandled exception. System.FieldAccessException: Attempt by method 'Program.Mai
   <h2>How to debug this class of problem</h2>
 
   <div class="callout callout--debug">
-    <p><strong><code>MissingFieldException</code> or <code>MissingMethodException</code> naming a
-    member that exists.</strong> This is always a version mismatch, never a bug in the code that
+    <h4><code>MissingFieldException</code> or <code>MissingMethodException</code> naming a
+    member that exists</h4>
+    <p>This is always a version mismatch, never a bug in the code that
     threw. Something was compiled against a different build of the assembly that owns the member.
     If the name in the message starts with <code>get_</code> or <code>set_</code>, a property
     became a field; if it is a bare field name, a field became a property. Find which assembly
@@ -1943,7 +1955,8 @@ Unhandled exception. System.FieldAccessException: Attempt by method 'Program.Mai
   </div>
 
   <div class="callout callout--debug">
-    <p><strong><code>TargetInvocationException</code> with an unhelpful message.</strong> The
+    <h4><code>TargetInvocationException</code> with an unhelpful message</h4>
+    <p>The
     message belongs to the wrapper, not the fault. Read <code>InnerException</code> — and in logs,
     make sure the logger is configured to print inner exceptions, because a great many are not.
     That it is a <code>TargetInvocationException</code> at all tells you the call came through
@@ -1953,7 +1966,8 @@ Unhandled exception. System.FieldAccessException: Attempt by method 'Program.Mai
   </div>
 
   <div class="callout callout--debug">
-    <p><strong>An invariant is false and nothing assigned to it.</strong> When a total disagrees
+    <h4>An invariant is false and nothing assigned to it</h4>
+    <p>When a total disagrees
     with its lines, resist auditing the code that writes the total; it is usually correct. Audit
     every member that hands out a reference to something the total is computed from. Search the
     type for members returning <code>List&lt;</code>, <code>Dictionary&lt;</code>,
@@ -1964,8 +1978,8 @@ Unhandled exception. System.FieldAccessException: Attempt by method 'Program.Mai
   </div>
 
   <div class="callout callout--debug">
-    <p><strong>A method is unexpectedly slow and the profiler blames a property getter.</strong>
-    Count the calls before optimising the getter. If it is being called far more often than the
+    <h4>A method is unexpectedly slow and the profiler blames a property getter</h4>
+    <p>Count the calls before optimising the getter. If it is being called far more often than the
     number of objects involved, the fix is at the call site — a sort or a repeated filter reading
     the same property — and hoisting the read into a local, or computing the value once at
     construction, removes it entirely. The counters in the example above are a throwaway
@@ -1974,7 +1988,8 @@ Unhandled exception. System.FieldAccessException: Attempt by method 'Program.Mai
   </div>
 
   <div class="callout callout--debug">
-    <p><strong>Trust the compiler error code.</strong> <code>CS0122</code> means the member exists
+    <h4>Trust the compiler error code</h4>
+    <p><code>CS0122</code> means the member exists
     and the rule forbids it — check the modifier and where your code sits relative to the
     declaring type. <code>CS1061</code> and <code>CS0103</code> mean the compiler cannot see the
     member at all, which for a member you can see in the source means it is <code>internal</code>
@@ -1988,7 +2003,8 @@ Unhandled exception. System.FieldAccessException: Attempt by method 'Program.Mai
   <h2>Why this matters in a real system</h2>
 
   <div class="callout callout--why">
-    <p><strong>A concrete case.</strong> A team split one large service into two deployables and
+    <h4>A concrete case</h4>
+    <p>A team split one large service into two deployables and
     moved a shared <code>PricingConfig</code> type into a NuGet package so both could use it. The
     package was at 1.4.0. A developer noticed <code>Markup</code> was a public field, applied the
     analyser's suggestion to make it a property, and shipped 1.5.0. The build pipeline rebuilt
@@ -2023,7 +2039,8 @@ Unhandled exception. System.FieldAccessException: Attempt by method 'Program.Mai
   <h2>Misconceptions and anti-patterns</h2>
 
   <div class="callout callout--myth">
-    <p><strong>"Encapsulation means a getter and setter for every field."</strong> A class of
+    <h4>"Encapsulation means a getter and setter for every field"</h4>
+    <p>A class of
     <code>{ get; set; }</code> auto-properties has the same public surface as a class of public
     fields: anything can set anything, in any order, to any value. It buys the binary
     compatibility from earlier in this module and nothing else. Encapsulation is about which
@@ -2033,7 +2050,8 @@ Unhandled exception. System.FieldAccessException: Attempt by method 'Program.Mai
   </div>
 
   <div class="callout callout--myth">
-    <p><strong>"Properties are slower than fields, so use fields on hot paths."</strong> Measured
+    <h4>"Properties are slower than fields, so use fields on hot paths"</h4>
+    <p>Measured
     above: for a simple accessor the JIT inlines it and the two are indistinguishable across 200
     million reads. What <em>is</em> slower is a <code>virtual</code> property once more than one
     type is in play (about six times), and a computed property that does real work (138 times, in
@@ -2042,8 +2060,8 @@ Unhandled exception. System.FieldAccessException: Attempt by method 'Program.Mai
   </div>
 
   <div class="callout callout--myth">
-    <p><strong>"Returning <code>IReadOnlyList&lt;T&gt;</code> makes a collection safe."</strong>
-    It makes it read-only through <em>that reference</em>. If the object handed out is still the
+    <h4>"Returning <code>IReadOnlyList&lt;T&gt;</code> makes a collection safe"</h4>
+    <p>It makes it read-only through <em>that reference</em>. If the object handed out is still the
     <code>List&lt;T&gt;</code>, a type test converts it back and mutates your state, as the
     demonstration above does in three lines. It is a statement of intent that the compiler
     partly enforces, not a guarantee. <code>ReadOnlyCollection&lt;T&gt;</code> is the guarantee —
@@ -2051,7 +2069,8 @@ Unhandled exception. System.FieldAccessException: Attempt by method 'Program.Mai
   </div>
 
   <div class="callout callout--myth">
-    <p><strong>"<code>private</code> keeps data safe from other code."</strong> Reflection reads
+    <h4>"<code>private</code> keeps data safe from other code"</h4>
+    <p>Reflection reads
     private fields and writes <code>readonly</code> ones, as demonstrated. What is true — and
     more precise than the usual telling — is that <em>compiled IL</em> is checked by the runtime
     and fails with <code>FieldAccessException</code>. Reflection is the exception, not the rule.
@@ -2060,15 +2079,16 @@ Unhandled exception. System.FieldAccessException: Attempt by method 'Program.Mai
   </div>
 
   <div class="callout callout--myth">
-    <p><strong>"Make it <code>public</code> — someone might need it later."</strong> This reverses
+    <h4>"Make it <code>public</code> — someone might need it later"</h4>
+    <p>This reverses
     the cost. Widening access later is a non-breaking change you can make the day someone asks.
     Narrowing it is a breaking change you may never be able to make, because you cannot see who
     depends on it. Start at the narrowest level that compiles and widen on demand.</p>
   </div>
 
   <div class="callout callout--myth">
-    <p><strong>"A property should never do work, so use a method for anything non-trivial."</strong>
-    Closer to right than most of these, and still too strong. The workable rule is about what
+    <h4>"A property should never do work, so use a method for anything non-trivial"</h4>
+    <p>Closer to right than most of these, and still too strong. The workable rule is about what
     callers can assume: a property read should be roughly as cheap as a field read, should not
     throw for any valid state of the object, should return the same value when called twice with
     nothing changed in between, and should have no observable side effects. A getter that

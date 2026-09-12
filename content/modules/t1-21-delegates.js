@@ -223,8 +223,8 @@ class Program
   which is why <code>?.Invoke(...)</code> works as a null-safe way to raise one.</p>
 
   <div class="callout callout--note">
-    <p><strong>The three built-in families cover almost everything.</strong>
-    <code>Func&lt;…, TResult&gt;</code> returns a value and takes up to 16 parameters, with the
+    <h4>The three built-in families cover almost everything</h4>
+    <p><code>Func&lt;…, TResult&gt;</code> returns a value and takes up to 16 parameters, with the
     <em>return</em> type written last. <code>Action&lt;…&gt;</code> returns <code>void</code>.
     <code>Predicate&lt;T&gt;</code> is <code>Func&lt;T, bool&gt;</code> with a more descriptive
     name. Declaring your own <code>delegate</code> type is worth it when the name carries meaning
@@ -581,8 +581,8 @@ class Program
   delegates are not a special performance category, they are one more form of indirect call.</p>
 
   <div class="callout callout--note">
-    <p><strong>Two things this measurement had to be corrected for, both worth knowing.</strong>
-    The first version marked only the target method <code>[MethodImpl(NoInlining)]</code>, so the
+    <h4>Two things this measurement had to be corrected for, both worth knowing</h4>
+    <p>The first version marked only the target method <code>[MethodImpl(NoInlining)]</code>, so the
     delegate-to-a-lambda row inlined its whole body and measured <em>faster than a direct call</em>
     — a nonsense result caused by comparing an inlinable body against a deliberately
     non-inlinable one. Every target is now equally non-inlinable. Row 3 is still the fastest
@@ -818,7 +818,8 @@ log captured 4 entries
   fix for "one bad subscriber silences the rest", applied where the invocation happens.</p>
 
   <div class="callout callout--gotcha">
-    <p><strong>The unsubscribe demonstration is the failure, not the success.</strong> The log
+    <h4>The unsubscribe demonstration is the failure, not the success</h4>
+    <p>The log
     handler was removed because a reference to it was kept in a variable. The console handler was
     written inline as a lambda and can never be removed — it fired again for P-5 after the
     unsubscribe. Nothing reported a problem. If you intend a subscription to be removable, you must
@@ -888,7 +889,8 @@ source.OnChanged -= handler;</code></pre>
   <h2>How to debug this class of problem</h2>
 
   <div class="callout callout--debug">
-    <p><strong>A handler runs more or fewer times than expected.</strong> Print
+    <h4>A handler runs more or fewer times than expected</h4>
+    <p>Print
     <code>d?.GetInvocationList().Length ?? 0</code> at the point of invocation. That single number
     settles most questions: zero means nothing subscribed (or everything unsubscribed to null),
     more than expected means a duplicate subscription, and one fewer means an unsubscribe that did
@@ -899,14 +901,16 @@ source.OnChanged -= handler;</code></pre>
   </div>
 
   <div class="callout callout--debug">
-    <p><strong>An unsubscribe did nothing.</strong> Check whether the same delegate value was used
+    <h4>An unsubscribe did nothing</h4>
+    <p>Check whether the same delegate value was used
     to subscribe and unsubscribe. Two lambdas with identical text are different values — verified
     above as <code>==</code> returning <code>False</code>. Compare the invocation list length before
     and after; if it is unchanged, the removal found no match.</p>
   </div>
 
   <div class="callout callout--debug">
-    <p><strong>A publisher is blamed for an exception it did not cause.</strong> Read the stack
+    <h4>A publisher is blamed for an exception it did not cause</h4>
+    <p>Read the stack
     trace from the bottom up: if the frames below the throw belong to a subscriber and the frames
     above belong to the raising code, the exception crossed a delegate boundary. That means one
     subscriber failed and the others after it never ran. Wrapping each invocation-list entry
@@ -914,15 +918,16 @@ source.OnChanged -= handler;</code></pre>
   </div>
 
   <div class="callout callout--debug">
-    <p><strong>An object is not being collected and no reference to it is visible.</strong>
-    Look for delegates. <code>someDelegate.Target</code> is a reference the garbage collector
+    <h4>An object is not being collected and no reference to it is visible</h4>
+    <p>Look for delegates. <code>someDelegate.Target</code> is a reference the garbage collector
     honours, and it is invisible in the source — the code says
     <code>publisher.OnChanged += Handle;</code>, not "publisher now holds a reference to me". In a
     memory dump, the path to the root will pass through a delegate object.</p>
   </div>
 
   <div class="callout callout--debug">
-    <p><strong>Deciding whether a delegate is the right tool.</strong> Two questions. Does the
+    <h4>Deciding whether a delegate is the right tool</h4>
+    <p>Two questions. Does the
     varying thing have state or several related operations? Then an interface, per
     <a href="#/m/t1-12-abstraction-and-interfaces">Abstraction, Abstract Classes, and
     Interfaces</a>. Does it return a value <em>and</em> need multiple subscribers? Then neither —
@@ -935,7 +940,8 @@ source.OnChanged -= handler;</code></pre>
   <h2>Why this matters in a real system</h2>
 
   <div class="callout callout--why">
-    <p><strong>A concrete case.</strong> An order service published a completion notification
+    <h4>A concrete case</h4>
+    <p>An order service published a completion notification
     through a delegate field, with four subscribers registered at startup: a metrics recorder, an
     audit writer, a cache invalidator, and an email sender. About 30,000 orders a day.</p>
     <p>A change to the email provider introduced a call that could throw on malformed addresses —
@@ -975,40 +981,46 @@ source.OnChanged -= handler;</code></pre>
   <h2>Misconceptions and anti-patterns</h2>
 
   <div class="callout callout--myth">
-    <p><strong>"A delegate is a function pointer."</strong> It is a function pointer <em>and</em> a
+    <h4>"A delegate is a function pointer"</h4>
+    <p>It is a function pointer <em>and</em> a
     target object, and it can hold a list of both. The target is why a delegate keeps an object
     alive, and the list is why <code>+=</code> works at all. A raw function pointer exists in C#
     — <code>delegate*</code> in unsafe code — and is a genuinely different thing.</p>
   </div>
 
   <div class="callout callout--myth">
-    <p><strong>"<code>+=</code> on a delegate replaces the handler."</strong> It appends. Subscribing
+    <h4>"<code>+=</code> on a delegate replaces the handler"</h4>
+    <p>It appends. Subscribing
     twice runs the handler twice, which is a common cause of duplicated side effects — doubled
     emails, doubled metrics — and the invocation list length is how you see it.</p>
   </div>
 
   <div class="callout callout--myth">
-    <p><strong>"<code>-=</code> tells me if it failed."</strong> It returns the new delegate and
+    <h4>"<code>-=</code> tells me if it failed"</h4>
+    <p>It returns the new delegate and
     reports nothing. Removing something that is not there is silently a no-op, which is exactly
     what happens when the argument is a freshly written lambda — verified above with the list
     length unchanged at two.</p>
   </div>
 
   <div class="callout callout--myth">
-    <p><strong>"An empty delegate is safe to invoke."</strong> There is no empty delegate. Removing
+    <h4>"An empty delegate is safe to invoke"</h4>
+    <p>There is no empty delegate. Removing
     the last entry gives <code>null</code>, and the compiler types <code>-=</code> as nullable
     because of it. Invoking without a check throws <code>NullReferenceException</code>.</p>
   </div>
 
   <div class="callout callout--myth">
-    <p><strong>"Delegates are slow."</strong> Measured at about 2.8 ns against 1.5 ns for a direct
+    <h4>"Delegates are slow"</h4>
+    <p>Measured at about 2.8 ns against 1.5 ns for a direct
     call — the same range as an interface or virtual call, and inlinable when the JIT can see the
     target. What actually costs is <em>capture</em>: 88 bytes allocated per capturing lambda
     creation, against zero for a method group.</p>
   </div>
 
   <div class="callout callout--myth">
-    <p><strong>"Two delegates to the same method are the same object."</strong> Sometimes, by
+    <h4>"Two delegates to the same method are the same object"</h4>
+    <p>Sometimes, by
     accident. Two conversions of the same <em>static</em> method group are cached to one object
     since C# 11; two delegates to the same instance method on the same object are
     <strong>equal but distinct objects</strong>. Compare with <code>==</code>, never
