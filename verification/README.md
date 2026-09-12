@@ -88,6 +88,70 @@ the friend "same assembly" identity. Delete the trees between configurations:
 rm -rf lib/obj lib/bin consumer/obj consumer/bin out*
 ```
 
+## Conventions
+
+Three things that had drifted across folders and are now written down.
+
+### Suppressing a warning
+
+`#pragma warning disable` is allowed **only where the lesson deliberately provokes the warning**,
+and only with a comment on the line above saying which claim needs it. It is never used to quieten
+something incidental — if a file has an incidental warning, the file is wrong.
+
+Every suppression currently in use, and why the lesson needs it:
+
+| Code | Uses | What the lesson is doing |
+| --- | --- | --- |
+| `ASP0000` | 11 | Building a second service provider on purpose, to show what a captive dependency or a premature `BuildServiceProvider()` costs. |
+| `ASP0022` | 4 | Registering a route that shadows another, to show the resolution order. |
+| `CS8618` | 2 | A non-nullable field left unassigned, which is the nullable-reference-types lesson's subject. |
+| `CA2200` | 2 | Rethrowing with `throw ex;` so the stack trace it destroys can be compared against `throw;`. |
+| `CS8625`, `CS8602`, `CS8524`, `CS8425` | 1 each | Null literal into a non-nullable, dereference of a maybe-null, a non-exhaustive switch, and an async iterator without a cancellation token — each is the thing being demonstrated. |
+
+Nine folders use them: `t1-26`, `t1-27`, `t1-28`, `t1-29`, `t3-02`, `t3-05`, `t3-10`, `t3-11`,
+`t3-12`. A tenth folder appearing here without a row in the table above is drift.
+
+### Packages
+
+Most folders take none — everything is in the shared framework, which is the point. Where a package
+is genuinely the subject of the lesson, **the version is pinned exactly**, never floated:
+
+| Package | Version | Folder |
+| --- | --- | --- |
+| `Microsoft.AspNetCore.OpenApi` | 10.0.10 | `t3-18-openapi` |
+| `Microsoft.OpenApi` | 2.11.0 | `t3-18-openapi` — transitive, pinned only to clear `NU1903` |
+| `Microsoft.FeatureManagement.AspNetCore` | 4.3.0 | `t3-20-feature-flags` |
+| `Hangfire.Core` | 1.8.21 | `t3-22-scheduled-jobs` |
+| `Hangfire.InMemory` | 1.0.0 | `t3-22-scheduled-jobs` |
+| `Newtonsoft.Json` | 13.0.4 | `t3-22-scheduled-jobs` — transitive, pinned only to clear `NU1903` |
+| `Cronos` | 0.11.0 | `t3-22-scheduled-jobs` |
+| `Microsoft.AspNetCore.SignalR.Client` | 10.0.0 | `t3-23-signalr` |
+| `Grpc.AspNetCore.Server` | 2.71.0 | `t3-24-grpc` |
+| `Grpc.Net.Client` | 2.71.0 | `t3-24-grpc` |
+
+A transitive package is pinned only when a version audit demands it, and the row says so, because
+otherwise the pin looks arbitrary to whoever reads it next.
+
+`t3-25-http-client`, `t3-26-webhooks-outbound` and `t3-27-webhooks-inbound` take no packages at
+all, which is worth noticing: they are the three most self-contained folders in Track 3, and each
+spins up a real Kestrel server and calls it over a real socket using nothing but the framework.
+
+### Findings that depend on the runtime version
+
+Most measurements here are about behaviour that will not change — a signature is over bytes, a
+closed TCP connection holds its port. A few are about a specific implementation decision that a
+future .NET could reverse. **Those say so in the prose, naming the version**, so a reader in three
+years knows which claims to re-run rather than trust:
+
+| Finding | Where | Why it is version-dependent |
+| --- | --- | --- |
+| Synchronous work at the top of `ExecuteAsync` does not block start-up | `t3-21-hosted-services` | Changed in .NET 8. On earlier versions the claim is false. |
+| `IHttpClientFactory` sets `PooledConnectionLifetime` to the handler lifetime, so a captured client still recycles connections | `t3-25-http-client` | An implementation detail of the factory's default primary handler, not a documented contract. |
+| `AddHttpClient<T>` registers `T` as transient | `t3-25-http-client` | Documented, but the lifetime is the kind of thing a major version can revisit. |
+
+The convention is a sentence, not a marker: write "on .NET 10" next to the claim. A reader skimming
+for what to re-verify can grep for it, and nothing about the styling has to change.
+
 ## Contents
 
 ### `t1-01-what-a-program-is/`
@@ -1519,6 +1583,225 @@ Every file in this folder takes two package references — `Microsoft.AspNetCore
 **Every signed-out visitor hashed to bucket 88.** Half the population shared one targeting key, so all 500 landed in the control group. Had that bucket been under 50 instead, every anonymous visitor would have received the variant, the overall split would still have looked like 50%, and the experiment would have produced a confident wrong answer rather than an obvious one.
 
 **Deleting a flag at 100% changed behaviour for three tenants.** The percentage is the last rule and exclusions sit above it, so "100%" means "everyone the earlier rules did not already decide". Flag consoles report the configured percentage, which is an input, not the evaluated-true proportion, which is an output.
+
+### `t3-21-hosted-services/`
+
+| File | What it proves | Run in |
+| --- | --- | --- |
+| `00-smallest.cs` | The smallest worker, the two `HostOptions` defaults nobody set, and the four decisions the shape has already made. | **Release** |
+| `01-lifetime-and-ordering.cs` | Four places 500 ms of work can go and which two delay the web server. Where `ExecuteAsync`'s synchronous prefix actually runs. Start/stop ordering. **What `StopHost` does, which is not what it says.** All six `IHostedLifecycleService` hooks in order. | **Release** |
+| `02-scope-and-state.cs` | A captive `DbContext` that Development refuses and Production accepts. Scope per run against per batch against per item. A change tracker at 2,000 entities against a flat 1. Which registration spellings deduplicate. | **Release** |
+| `03-production.cs` | The worker that stopped on the 3rd: one timed-out gateway call ending the loop, every health signal still green, and the three changes that fix it. | **Release** |
+| `04-exercises.cs` | Every answer measured, including a payment that vanishes into a shutdown. | **Release** |
+| `05-minimal-example.cs` | One worker with all seven decisions made, exercised through a timeout and a shutdown. | **Release** |
+
+**One timed-out gateway call ended the loop permanently, and the host carried on serving.** 3 items processed against 14 on the healthy run, `LoopAlive` false, and the application still answering HTTP. The cause is that a per-item deadline and a shutdown raise the *same exception type*, so a `catch (OperationCanceledException)` outside the loop cannot tell them apart. `BackgroundServiceExceptionBehavior` never came into it — both settings concern a worker that *threw*, and this one returned, which is how a `BackgroundService` reports success.
+
+**`StopHost` does not stop the host.** Under both `StopHost` and `Ignore`, the application was still answering requests 600 ms after its worker died. `StopHost` calls `StopApplication()`, which fires `ApplicationStopping` — a *request*. `app.Run()` acts on it; `await app.StartAsync()` does not. **A worker that dies on every run can therefore pass an integration test suite**, because test hosts are in exactly that shape.
+
+**Synchronous work in `ExecuteAsync` no longer blocks startup, and the constructor still does.** `Thread.Sleep(500)` at the top of `ExecuteAsync` cost 1 ms of host start; the same sleep in the constructor cost 511 ms, and an awaited `StartAsync` 513 ms. Instrumented: `ExecuteAsync` was entered on thread 13 while `StartAsync` returned on thread 6, with the sleep still running. **This changed in .NET 8** — on .NET 6 and 7 the synchronous prefix ran on the startup path, which is what `await Task.Yield()` at the top of an old `ExecuteAsync` was working around.
+
+**`AddHostedService<T>()` deduplicates and `AddSingleton<IHostedService, T>()` does not.** Registering the same type twice with the first gives one loop; with the second, two. That is the opposite of the common fear in one direction and the common assumption in the other.
+
+**A captive `DbContext` tracked 2,000 entities where a scope per item never exceeded 1.** The Development build threw `InvalidOperationException` at `Build()`; the Production build started and used one context for every iteration, because `ValidateScopes` is on in one environment and off in the other.
+
+**A loop that ignores its stopping token cost the full `ShutdownTimeout` and was abandoned mid-item** — 3004 ms against 1 ms, with work in progress cut off rather than finished.
+
+**`await Task.Delay(period)` drifted 221 ms over five cycles where `PeriodicTimer` drifted 14.** `Task.Delay` waits *after* the work, so each cycle is period plus work and the error accumulates. At the real scale, an hourly job doing twenty minutes of work runs every eighty minutes.
+
+**A payment claimed off the queue vanished when the write was given the stopping token.** Same shutdown, same timing: token into everything gives 1 settled and 1 lost; token into only the wait gives 2 settled and 0 lost. The wait should be cancellable and the unit of work should not.
+
+### `t3-22-scheduled-jobs/`
+
+Every file takes `Hangfire.Core`, `Hangfire.InMemory` and an explicit `Newtonsoft.Json@13.0.4` — without the pin, the transitive 11.0.1 trips NU1903. `02-scheduling.cs` and `04-exercises.cs` also take `Cronos`, because the copy of it inside Hangfire.Core is internal.
+
+| File | What it proves | Run in |
+| --- | --- | --- |
+| `00-smallest.cs` | Three jobs and their states before and after running; the four things that happened without being written. | **Release** |
+| `01-storage-and-restart.cs` | Twelve items through a `ConcurrentQueue` and through storage, with the process stopping a third of the way. The job state machine. What is actually stored when you enqueue a lambda. | **Release** |
+| `02-scheduling.cs` | Eight cron expressions and their next occurrences. One expression in four time zones. **Both daylight-saving days.** Missed-run policy. | **Release** |
+| `03-production.cs` | The deploy that landed mid-run, the retry policy that multiplied it, and the fan-out plus guard that made a full repeat cost nothing. | **Release** |
+| `04-exercises.cs` | Every answer measured, including a job that runs before its data is committed. | **Release** |
+| `05-minimal-example.cs` | One job system with all the decisions made, run twice over. | **Release** |
+
+**A deployment mid-run invoiced 14 of 20 accounts twice.** 13 sent before the deploy, 34 sent in total, 20 distinct. The job's final state was `Succeeded` — no exception, no failed job, no retry recorded. The scheduler behaved correctly: `Processing` is a claim rather than a lock, so a claim held by a server that stopped reporting has to be released by somebody, and the job restarts from the beginning.
+
+**The default retry policy turned one bad record into ten copies of everything before it.** Ten attempts, 130 sends across 13 distinct accounts, one account invoiced ten times. The retries were also useless — a missing billing address is still missing on the tenth attempt.
+
+**A daily job at 01:30 fired at 02:00 on the spring-forward day.** Not skipped, and not on time: Cronos fires at the instant the gap ends. The interval since the previous run was 23 hours, so a job with a hardcoded 24-hour window silently misses thirty minutes of data on that one night. In October the same clock reading happens twice and Cronos takes the earlier one — a different library may take both.
+
+**`0 9 * * *` means 09:00 local in January and 10:00 local in July.** Nothing changed in March; the schedule was always UTC and the clocks moved underneath it. Which is why it is reported as "it started happening" rather than "it has always been wrong".
+
+**A retry is re-enqueued on the `default` queue, not the queue the job started on.** A server whose `Queues` list omits `default` never runs any retry in the system. This cost two hours during writing: 18 of 20 jobs succeeded and three sat in `Enqueued` forever, looking exactly like jobs silently vanishing.
+
+**Enqueueing inside an uncommitted transaction loses the race.** The job found no invoice; enqueueing after the commit found it. Moving the enqueue fixes the symptom and creates a quieter one — a process that dies between the commit and the enqueue leaves an invoice nothing will ever send.
+
+**One queue made the slowest password-reset email wait 834 ms; two queues made it 5 ms.** Nothing failed and nothing retried. The emails were queued behind eight report rebuilds, which is why the dashboard showed a healthy system and the alert came from a human.
+
+**Fan-out plus an idempotency guard made a full repeat of the run free.** The whole run was requeued exactly as in the incident: 19 invoices sent, 0 accounts invoiced twice, 19 duplicate sends refused by the guard.
+
+### `t3-23-signalr/`
+
+Every file takes `Microsoft.AspNetCore.SignalR.Client@10.0.0`. The server side needs no package — it is in the shared framework.
+
+| File | What it proves | Run in |
+| --- | --- | --- |
+| `00-smallest.cs` | A real client connecting to a real hub, the server pushing unprompted, and the four things already different from a request. | **Release** |
+| `01-connection-lifecycle.cs` | All three transports carrying the same connection. What a reconnect keeps and loses. Messages sent while a client is away. Two tabs producing two connections. | **Release** |
+| `02-targeting.cs` | Six targeting calls against three clients. Where a group lives. **Both directions of a mismatched method name.** | **Release** |
+| `03-production.cs` | The dashboard measured on one server, on two servers, and on two servers with a backplane. | **Release** |
+| `04-exercises.cs` | Every answer measured, including the 32 KB message that terminates the connection. | **Release** |
+| `05-minimal-example.cs` | One hub with every decision made, exercised through a reconnect and a missed push. | **Release** |
+
+**Six of six dashboards updated on one server; three of six on two.** The same code, unchanged. A server can only write to connections it holds, so a send from server 1 reaches server 1's clients and nobody else's. With a backplane both halves updated and the published message reached 2 servers. Every symptom in the tickets follows: "works for some merchants" is one time in N for N replicas, "one tab updates and the other does not" is two independently load-balanced connections, and "refreshing sometimes fixes it" is a fresh roll of the dice.
+
+**A reconnect comes back as a different connection with none of its groups.** New connection id, group membership zero, and a subsequent broadcast to that group did not arrive while a broadcast to everyone did. Automatic reconnect restores the transport, not the context.
+
+**Two messages sent during a 200 ms absence were lost with nothing recorded anywhere.** Sent: before, during-1, during-2, after. Received: before, after. SignalR is fire-and-forget by design — which is why a hub message must never be the only record of something.
+
+**`Context.Abort()` on the server does not trigger the client's automatic reconnect.** The client treats a server-initiated close as deliberate and stays disconnected. This cost a rewrite of two sections: testing reconnect behaviour needs the transport killed, not a polite abort.
+
+**A 64 KB hub message terminates the connection rather than failing the call.** 8 KB and 31 KB accepted; 64 KB and 256 KB produced `HubException` with the connection `Disconnected`. There is no way to send half a message, so the only available response is to stop — and an automatic retry of the same payload disconnects again, which looks exactly like a network problem.
+
+**Four parallel invocations from one client took 848 ms against 217 ms.** `MaximumParallelInvocationsPerClient` defaults to 1. That is deliberate — it bounds what one client can occupy and it preserves message ordering — so the fix is usually to move slow work out of the hub rather than to raise the limit.
+
+**`Clients.User("u-7")` reached nobody until an `IUserIdProvider` was registered.** Sending to an empty set is not an error: no receipt, no recipient count, nothing in a log. The same is true of a misspelled group name or a stale connection id.
+
+**A server-to-client method name mismatch is completely silent.** The client ignored a message naming a handler it did not have, with no error on either side. Client-to-server threw `HubException` — but only for `InvokeAsync`; `SendAsync` is silent in that direction too.
+
+### `t3-24-grpc/`
+
+Every file takes `Grpc.AspNetCore.Server@2.71.0` and `Grpc.Net.Client@2.71.0`, and every one states `HttpProtocols.Http2` explicitly — over cleartext there is no ALPN to negotiate it. They also define their service contract by hand rather than from a `.proto` file, with JSON as the marshaller, so there is no code generation step: a `Method<TRequest, TResponse>`, a `BindService` that is called once with a null service to discover the methods and again per instance to attach the handlers, and a `[BindServiceMethod]` attribute on an **abstract base class** — it will not bind on a sealed one.
+
+| File | What it proves | Run in |
+| --- | --- | --- |
+| `00-smallest.cs` | A typed call across a real HTTP/2 connection, and the three status codes a caller can act on. | **Release** |
+| `01-four-call-types.cs` | All four call types running, with server streaming's first result timed against its last and the bidirectional streams interleaving. | **Release** |
+| `02-deadlines-and-status.cs` | A deadline honoured, exceeded, and absent. What reaches the caller when a handler ignores its token. Which exception types survive the boundary. | **Release** |
+| `03-production.cs` | Twenty callers against a two-second dependency, with and without deadlines, and the server work each leaves behind. | **Release** |
+| `04-exercises.cs` | Every answer measured: three protocol configurations, a renamed field, a channel per call, and a subscription outliving its client. | **Release** |
+| `05-minimal-example.cs` | One service with a budget on every call, the token passed all the way down, statuses mapped once, and a shared channel. | **Release** |
+
+**Twenty callers, no deadlines, against a two-second dependency: 0 finished at 700 ms and all 20 were still waiting.** The dependency was slow, not down. What turns that into an outage is arithmetic — concurrency needed is throughput times latency, so 20 ms to 2 s multiplies the required slots by a hundred, which nothing is provisioned for.
+
+**A deadline the handler ignores costs 40,052 ms of server work against 4,777 ms.** The callers were freed at about the same moment either way (276 ms against 244 ms), and 20 of 20 abandoned calls ran to completion. Eight times the work, for nobody — and retries then compound it. "We added timeouts" is half a fix.
+
+**An endpoint configured for `Http1AndHttp2` refuses every gRPC call over cleartext.** `Http1` gave `Internal`, `Http2` gave `OK`, and `Http1AndHttp2` gave `Internal` — the configuration most people reach for is the one that does not work, because protocol negotiation lives in the TLS handshake and there is nothing to negotiate in over plain HTTP. The `Http2` row also refused an ordinary GET, which is why a health check on a different port proves nothing.
+
+**Only `RpcException` carries its meaning across.** `ArgumentException` and `OperationCanceledException` both arrived as `Unknown` with `"Exception was thrown by handler."` as the detail. A caller cannot tell a validation failure from a bug, and an unmapped exception's own message crosses the service boundary as written.
+
+**A renamed field parsed as zero.** The added field was ignored harmlessly; the renamed one silently became the default. Real protobuf keys on field *numbers*, so renaming is free and renumbering is the catastrophic one — and renumbering looks like a tidy-up.
+
+**A channel per call took 61 ms for 50 calls against 20 ms reused.** A channel is a connection, not a request object, and creating one per call also discards the HTTP/2 multiplexing that made the connection worth having.
+
+**Exercise 4's stream leak did not reproduce, and the file says so.** Disposing the call notifies the server, so both handlers stopped — the one observing its token at 11 ms because it was told, the one ignoring it at 35 ms because its next write threw. The production shapes that defeat that safety net (a handler that mostly waits, a client that vanishes without sending anything) cannot be simulated in one process, and are labelled in the file as reasoning rather than measurement.
+
+**Two binding failures worth writing down.** `[BindServiceMethod]` on the concrete class gives `Could not find 'Get' on Payments`; it has to be on the abstract base. And `BindService` must return a null handler when handed a null service, or binding fails with `Delegate to an instance method cannot have null 'this'`.
+
+### `t3-25-http-client/`
+
+No packages. Every file starts a real Kestrel server on loopback and calls it, and **the server counts distinct connections itself** — so none of the connection claims are inferred from the client side. Three files use `SocketsHttpHandler.ConnectCallback` to stand in for name resolution and for the machine's ephemeral port range, which is the only way to reproduce a failover or an exhaustion in one process.
+
+| File | What it proves | Run in |
+| --- | --- | --- |
+| `00-smallest.cs` | 404 and 500 are answers, not exceptions. What `EnsureSuccessStatusCode` discards. The three defaults, printed. | **Release** |
+| `01-lifetime-and-connections.cs` | 50 calls two ways, counted server-side. `PooledConnectionLifetime` infinite against 300 ms. A failover the default client never notices. | **Release** |
+| `02-factory-and-typed-clients.cs` | What the factory actually pools, what handler lifetime is for, and the captured-client claim measured rather than repeated. | **Release** |
+| `03-production.cs` | The port range modelled at 200 ports with a 4-second `TIME_WAIT`, and the same workload run both ways. | **Release** |
+| `04-exercises.cs` | Every answer measured, including a 700 ms timeout that a 3,101 ms body read walked straight past. | **Release** |
+| `05-minimal-example.cs` | One typed client with every decision made, exercised through all four outcomes. | **Release** |
+
+**Fifty calls opened fifty connections against one.** 545 ms against 32 ms, counted by the server. Each `new HttpClient()` brings its own handler and therefore its own pool, so nothing is reused and disposing it throws the connection away.
+
+**A caller that exhausts the port range takes it from everybody.** 105 of 300 pricing calls failed with `AddressAlreadyInUse`, and 2 to 4 of 10 calls to an unrelated service through an unrelated client failed alongside them — whichever call needed a *new* connection while the pool was empty. The same workload with one shared client: 0 failures, peak 4 ports of 200. **Intermittent failures spread across unrelated dependencies is the signature.**
+
+**And the port arithmetic explains the two confusing symptoms.** 16,384 ports over a 240-second `TIME_WAIT` sustains 68 new connections a second; a service at 100 requests a second needs 100. It cannot recover while the load continues, and a restart does not return the ports — `TIME_WAIT` is kernel state that outlives the process, so a restart only empties the pool and buys the time it takes to fill again.
+
+**The default client never resolved the name a second time.** One lookup across eight calls; after the failover, all four remaining calls still reached the old server. With a 300 ms `PooledConnectionLifetime`: four lookups and every post-failover call reached the new one. Nothing was cached wrongly and no TTL was ignored — **the client never had a reason to ask**, which is why the fix is a connection lifetime and not a DNS setting.
+
+**The advice about capturing a factory client is out of date, and this file was written expecting the opposite.** A held client and a per-call client both opened 3 connections over 3.2 seconds. Reflecting on the handler shows why: the factory sets `PooledConnectionLifetime` on its primary `SocketsHttpHandler` to the configured handler lifetime (`00:02:00` by default). **What capturing still breaks is the rest of the chain** — 3 handler chains built per-call against 1 held, so a cached token, an options snapshot, a breaker's state and the scope behind them are all frozen for the life of the process, and the chain is never disposed.
+
+**`AddHttpClient<T>` registers `T` as transient.** Two resolutions are different objects. Injecting a typed client into a singleton is therefore a capture — legal, silent, and never caught by scope validation, unlike a scoped service in the same position.
+
+**A 500 with a JSON body parsed cleanly into a `Price` with `AmountMinor = 0`.** `GetAsync` + `ReadFromJsonAsync` returned it without complaint; `GetFromJsonAsync` threw, because it calls `EnsureSuccessStatusCode` internally. Two conveniences that look interchangeable, one of which is silent about failure.
+
+**`HttpClient.Timeout` stops applying once the headers arrive.** With `ResponseContentRead` a 700 ms timeout fired at 708 ms. With `ResponseHeadersRead` the headers came at 3 ms and the body read ran to 3,101 ms with nothing firing. Only a `CancellationToken` covers the read — which is a reason to pass one even when a timeout is set.
+
+**A per-attempt timeout is not a budget.** Three attempts at 300 ms with backoff took 1,157 ms for a call with a 500 ms budget; the same loop under one linked token stopped at 2 attempts and 506 ms.
+
+**A timeout and a cancellation are both `TaskCanceledException`, and both have an inner exception.** The discriminator is specifically `TimeoutException`; a caller's cancellation carries another `TaskCanceledException`. Testing for the presence of an inner exception distinguishes nothing.
+
+**A closed port did not refuse the connection.** With the server stopped, the connect attempt was dropped rather than reset and only `ConnectTimeout` ended it, at 636 ms. Machine-specific — a firewall — but the lesson is not: **"the address is wrong" can present as a slow service rather than a broken one**, which is why `ConnectTimeout` is its own setting.
+
+### `t3-26-webhooks-outbound/`
+
+No packages. Every file runs a real Kestrel server standing in for one or more consumers and delivers real signed HTTP requests to it. Two files model something they cannot reproduce honestly in one process and say so in their headers: `03-production.cs` compresses nothing but its own scale, and `05-minimal-example.cs` uses a millisecond retry schedule where a real sender would use hours.
+
+| File | What it proves | Run in |
+| --- | --- | --- |
+| `00-smallest.cs` | One signed delivery accepted, the same delivery with one character changed rejected, and the four things already different from calling an API. | **Release** |
+| `01-signing.cs` | Four ways a consumer might obtain "the payload", replay with and without a signed timestamp, the timing signal, and a two-secret rotation. | **Release** |
+| `02-retries-and-ordering.cs` | The backoff schedule, the thundering herd with and without jitter, duplicates from a lost acknowledgement, and eight events arriving in the wrong order. | **Release** |
+| `03-production.cs` | Six consumers, one slow, and the same 60 events delivered from a shared queue and from one queue each. | **Release** |
+| `04-exercises.cs` | Every answer measured, including a webhook URL reaching an internal admin endpoint through a redirect. | **Release** |
+| `05-minimal-example.cs` | One sender with an outbox, per-consumer queues, bounded deliveries, per-attempt signing, jittered backoff, a delivery log and automatic disabling. | **Release** |
+
+**A shared delivery queue cost the healthy consumers 1,314 ms against 152 ms.** Worst wait; the average went 736 ms to 81 ms. **Every delivery succeeded in both runs** — the dashboard's delivery success rate was accurate and useless, because the failure was in the waiting and nothing was measuring it. The metric that catches this is queue age per consumer.
+
+**And two numbers got worse when the queues were separated, which is the design working.** The slow consumer's own worst wait went 1,267 ms to 3,690 ms and the whole batch went 1,672 ms to 4,105 ms, because with one queue each it gets one worker instead of helping itself to four. The cost moved onto the consumer that caused it.
+
+**A consumer verifying the wrong bytes passed anyway.** Of four ways to obtain the payload — the raw body, a `JsonElement` round trip, a typed-model round trip and a pretty-print — the first two matched and the last two did not. **The `JsonElement` round trip is the dangerous row**: System.Text.Json preserves property order and writes compactly, so a consumer written the wrong way passes every test until a payload appears that the two paths encode differently.
+
+**A signature over the body alone is replayable forever.** A delivery captured 15 minutes earlier verified cleanly; the same scheme with the timestamp inside the signed material was rejected against a 5-minute window. Which is also why a retry must be re-signed rather than resent: **the original request resent verbatim after 20 minutes returned 401, and the re-signed one returned 200.**
+
+**The timing signal is real, small, and only stable in direction.** Across four runs `string ==` took 1.67x to 3.45x longer for a mismatch at the last byte than at byte 3, while `FixedTimeEquals` stayed between 0.83x and 1.10x. In absolute terms the gap is a few nanoseconds, measured in-process with no network in the way — the most favourable case an attacker could hope for. `FixedTimeEquals` itself costs about 0.36 µs per call, twenty times the fast path and once per delivery.
+
+**Without jitter, 100 of 100 retries landed in one 50 ms window.** With full jitter the busiest window held 9 and all 20 windows were used. A platform hosting many consumers gets its whole backlog in one instant, fails again, and re-synchronises the herd.
+
+**A lost acknowledgement produced three applications of one event.** The consumer did the work and then timed out answering, three times; keyed on the event id it applied it once. A timeout cannot say whether the work happened, so the only safe assumption is that it did and the only safe action is to retry anyway.
+
+**Eight events delivered in parallel arrived with 15 out-of-order pairs**, before any retry was involved — sent 1-8, received `4 6 2 8 5 1 7 3`. Serialised, zero. And the fix measured in `04-exercises.cs` is not ordering: a consumer that checks a version field ended at `refunded (version 2)` while one that applies what it is told ended at `captured (version 1)`, **from the identical backwards delivery**.
+
+**A customer's webhook URL reached an internal admin endpoint twice — once directly and once through a redirect from a URL that would have passed registration-time validation.** `HttpClient` follows redirects by default, so the address that was checked is not the address that was called. With redirects off and the resolved address checked per send: zero. The signature contributed nothing to either outcome.
+
+**An event sent before the transaction committed produced a 404 on the consumer's read-back**; sent by a worker after the commit, 200. The rolled-back transaction in `05-minimal-example.cs` announced nothing at all.
+
+**And a claim in `05-minimal-example.cs` was written before it was measured and had to be rewritten.** Its three retries to one consumer carry *the same* signature, not three different ones, because they landed inside the same second and the timestamp has one-second resolution. The signature tracks the clock, not the attempt — worth knowing before somebody uses it as a delivery identifier.
+
+### `t3-27-webhooks-inbound/`
+
+No packages. Five of the six files run a real Kestrel server and post real signed requests to it; `02` and `04` are in-process, because a crash between two commits and a load balancer with three instances are not things one process can stage honestly any other way. This folder is the mirror of `t3-26-webhooks-outbound/` and several of its findings are that folder's findings seen from the other end.
+
+| File | What it proves | Run in |
+| --- | --- | --- |
+| `00-smallest.cs` | The smallest correct receiver, and the five ways a request is turned away. | **Release** |
+| `01-reading-the-body.cs` | Three ways ASP.NET Core takes the bytes away from you before you can hash them. | **Release** |
+| `02-replay-and-idempotency.cs` | A replay inside the window, a race between check and write, and the three places a claim can sit relative to the work. | **Release** |
+| `03-production.cs` | Twenty events, a real sender timeout, and a handler that does 900 ms of work before answering. | **Release** |
+| `04-exercises.cs` | Every answer measured, including a 29.9x cost difference between parsing before and after verifying. | **Release** |
+| `05-minimal-example.cs` | One receiver with a size limit, raw bytes, freshness before signature, a claim state, a sweep and a quarantine. | **Release** |
+
+**Twenty events became 60 deliveries and 60 charges.** 900 ms of work inside the handler against a 500 ms sender timeout: the sender recorded 20 of 20 deliveries failed, we recorded 60 successes, and both were telling the truth. Answering first and working after: 20 deliveries, 0 failures, 20 charges, and a handler that returned in 9 ms. **The work still takes 900 ms** — nothing was optimised.
+
+**The request body reads as 94 bytes once and 0 bytes the second time, and does not throw.** An empty string is not an error condition, so a verifier that reads second hashes nothing. `EnableBuffering()` plus a position reset gave 94 and 94.
+
+**A bound parameter consumes the body before the handler's first line.** The model bound correctly to `evt_01HQ8` and left 0 of 94 bytes behind. Nothing warns. The fix is not `EnableBuffering` — it is to stop binding.
+
+**A UTF-8 BOM breaks verification for one partner and nobody else.** 97 bytes were sent and 97 verified when read as bytes; decoded to a string and re-encoded, 94 — because `StreamReader` treats a leading BOM as an encoding declaration and strips it. Plain ASCII and a pound sign both round-tripped fine, **which is exactly why the broken code ships**.
+
+**A replay inside the window was accepted three times out of three.** The window bounds how old a request may be and says nothing about how many times it may arrive; a replay is byte-for-byte a real delivery with a valid signature, and no cryptography separates them. With an event-id check: once.
+
+**`if (!seen) { seen = true; apply(); }` applied 20 events 22 times.** Twenty concurrent pairs; `TryAdd` gave exactly 20. In a real receiver the atomic operation is an `INSERT` against a unique constraint, where the duplicate-key violation *is* the answer.
+
+**Where the claim sits decides what a crash costs, and the careful-looking order is the worst one.** Claim-then-work: 0 charges after the crash and **0 after redelivery** — the event is lost permanently and the redelivery is *correctly* skipped as a duplicate. Work-then-claim: 1 then 2, a double charge, at least visible. One transaction: 0 then 1, exactly once. This is a constraint on the design, not a detail: the dedupe store has to live in the same database as the work.
+
+**Parsing before verifying cost 29.9x.** 435 ms against 15 ms for 200 unsigned requests carrying a legal 23,731-byte payload. Everything above the signature check is work an anonymous caller gets free, and parsing is both the most expensive step and the one that reads most naturally at the top of a handler.
+
+**A per-instance dedupe cache applied 30 events 48 times across three instances.** Both deliveries of an event landed on the same instance 12 times out of 30 — one in three, matching the instance count, which is the clue that names the cause. A shared store gave exactly 30.
+
+**A claim that records arrival rather than completion loses events silently.** Ten events, a worker that dies on three: a seen/not-seen bit completed 7 and lost 3 with **no redelivery possible**, because the sender already had its 200. Pending-to-done plus a sweep recovered all three. The metric that catches it is the age of the oldest pending claim — the mirror of queue age on the sending side.
+
+**And a 202 into an in-memory queue lost 8 of 12 events on a routine deploy**, with nothing recorded and no retry coming. Fast acknowledgement is a transfer of liability: from the instant it is sent, the sender's retries are gone.
 
 ## Measured on
 

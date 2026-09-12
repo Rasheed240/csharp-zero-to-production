@@ -38,11 +38,11 @@ No site machinery (`assets/js/*`, `assets/css/*`, `index.html`) is touched. See 
 | --- | ---: | ---: |
 | 1 — Language Foundations | 32 | 32 |
 | 2 — Async, Memory, Performance | 25 | 25 |
-| 3 — Web APIs & The Request Pipeline | 27 | 20 |
+| 3 — Web APIs & The Request Pipeline | 27 | 27 |
 | 4 — Data | 25 | 0 |
 | 5 — Production Systems & Architecture | 42 | 0 |
 | 6 — Data Structures, Algorithms, Interviews | 28 | 0 |
-| **Total** | **179** | **77** |
+| **Total** | **179** | **84** |
 
 ---
 
@@ -147,13 +147,23 @@ thread-pool starvation incident.*
 | 18 | `t3-18-openapi` | OpenAPI and Documentation | Built-in OpenAPI in .NET 9+/10, schema shaping, examples, and keeping docs honest. | written |
 | 19 | `t3-19-health-checks` | Health Checks | Liveness vs readiness vs startup, dependency checks, and the health check that took down the cluster. | written |
 | 20 | `t3-20-feature-flags` | Feature Flags | Toggle types, `Microsoft.FeatureManagement`, targeting filters, flag lifecycle, and removing dead flags. | written |
-| 21 | `t3-21-hosted-services` | `IHostedService` and `BackgroundService` | Lifetime hooks, long-running loops, scope creation, exception handling, and graceful shutdown. | planned |
-| 22 | `t3-22-scheduled-jobs` | Scheduled and Queued Jobs: Hangfire and Quartz | Persistent job storage, retries, cron scheduling, distributed execution, and job idempotency. | planned |
-| 23 | `t3-23-signalr` | Real-Time with SignalR | Hubs, transports and fallback, groups, scale-out with a backplane, and connection lifecycle handling. | planned |
-| 24 | `t3-24-grpc` | gRPC | Protobuf contracts, the four call types, code generation, deadlines, interceptors, and when to prefer REST. | planned |
-| 25 | `t3-25-http-client` | Calling Other Services: `HttpClient` | `IHttpClientFactory`, socket exhaustion, handler lifetime, typed clients, and timeout layering. | planned |
-| 26 | `t3-26-webhooks-outbound` | Sending Webhooks | Signing payloads (HMAC), timestamps, retries with backoff, delivery logs, and consumer-friendly design. | planned |
-| 27 | `t3-27-webhooks-inbound` | Consuming Webhooks Safely | Signature verification, replay protection, constant-time comparison, idempotent handling, and fast ACK. | planned |
+| 21 | `t3-21-hosted-services` | `IHostedService` and `BackgroundService` | Lifetime hooks, long-running loops, scope creation, exception handling, and graceful shutdown. | written |
+| 22 | `t3-22-scheduled-jobs` | Scheduled and Queued Jobs: Hangfire and Quartz | Persistent job storage, retries, cron scheduling, distributed execution, and job idempotency. | written |
+| 23 | `t3-23-signalr` | Real-Time with SignalR | Hubs, transports and fallback, groups, scale-out with a backplane, and connection lifecycle handling. | written |
+| 24 | `t3-24-grpc` | gRPC | Protobuf contracts, the four call types, code generation, deadlines, interceptors, and when to prefer REST. | written |
+| 25 | `t3-25-http-client` | Calling Other Services: `HttpClient` | `IHttpClientFactory`, socket exhaustion, handler lifetime, typed clients, and timeout layering. | written |
+| 26 | `t3-26-webhooks-outbound` | Sending Webhooks | Signing payloads (HMAC), timestamps, retries with backoff, delivery logs, and consumer-friendly design. | written |
+| 27 | `t3-27-webhooks-inbound` | Consuming Webhooks Safely | Signature verification, replay protection, constant-time comparison, idempotent handling, and fast ACK. | written |
+
+**Modules 21–27 read in order.** Every module in the curriculum stands alone — a reader with amnesia
+can open any one of them — but this run shares a single running system and refers back to specific
+measured incidents by name, so reading them in sequence is worth more than reading them scattered:
+
+- `t3-22` establishes the **outbox**, which `t3-26` and `t3-27` both rely on.
+- `t3-24` and `t3-25` approach the **same slow-dependency cascade** from opposite sides: a gRPC call
+  with no deadline, and an `HttpClient` with no connection reuse.
+- `t3-26` and `t3-27` are **the two halves of one contract** — the sender and the receiver of the
+  same webhook — and several of `t3-27`'s findings are the mirror image of `t3-26`'s.
 
 ---
 
